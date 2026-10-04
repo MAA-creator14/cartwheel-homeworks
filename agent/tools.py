@@ -18,7 +18,10 @@ They are marked xfail and flip to passing as you implement each function.
 
 from __future__ import annotations
 
+import re
 from typing import Any
+
+from rapidfuzz import fuzz
 
 from agent import db
 from agent.auth import AuthContext, can_cancel_order, permission_denied
@@ -52,8 +55,16 @@ def get_policy(ctx: AuthContext, policy_id: str) -> dict[str, Any]:
     Implementation notes:
         agent.helpcenter.load_policy_docs() returns every parsed doc.
     """
-    ### YOUR CODE HERE (HW1)
-    raise NotImplementedError("HW1: implement get_policy")
+    for doc in load_policy_docs():
+        if doc.policy_id == policy_id:
+            return {
+                "ok": True,
+                "policy_id": doc.policy_id,
+                "title": doc.title,
+                "audience": doc.audience,
+                "body": doc.body,
+            }
+    return {"ok": False, "error": "not_found", "reason": f"no policy with id '{policy_id}'"}
 
 
 def search_products(
@@ -95,8 +106,38 @@ def search_products(
         agent.db.list_products(conn, store_id) gives the candidate set.
         Use `with db.connection() as conn:` to close the database automatically.
     """
-    ### YOUR CODE HERE (HW1)
-    raise NotImplementedError("HW1: implement search_products")
+    tokens = query.lower().split()
+    if not tokens:
+        return {"ok": False, "error": "invalid_argument", "reason": "empty query"}
+    if max_price_usd is not None and max_price_usd <= 0:
+        return {
+            "ok": False,
+            "error": "invalid_argument",
+            "reason": f"max_price_usd must be positive, got {max_price_usd}",
+        }
+    limit = max(1, min(limit, MAX_SEARCH_LIMIT))
+
+    with db.connection() as conn:
+        store_id = None
+        if store is not None:
+            found = db.get_store_by_name(conn, store)
+            if found is None:
+                return {"ok": False, "error": "not_found", "reason": f"no store named '{store}'"}
+            store_id = found.id
+        candidates = db.list_products(conn, store_id)
+
+    matches = [
+        p
+        for p in candidates
+        if all(t in p.title.lower() or t in p.description.lower() for t in tokens)
+        and (max_price_usd is None or p.price_usd <= max_price_usd)
+    ]
+    matches.sort(key=lambda p: (p.price_usd, p.id))
+    products = [
+        {"product_id": p.id, "store_id": p.store_id, "title": p.title, "price_usd": p.price_usd}
+        for p in matches[:limit]
+    ]
+    return {"ok": True, "products": products, "count": len(products)}
 
 
 def list_my_orders(ctx: AuthContext) -> dict[str, Any]:
@@ -121,8 +162,22 @@ def list_my_orders(ctx: AuthContext) -> dict[str, Any]:
         scope is baked into which query you run. That is the point of the
         tool: the model cannot ask for someone else's orders through it.
     """
-    ### YOUR CODE HERE (HW1)
-    raise NotImplementedError("HW1: implement list_my_orders")
+    if ctx.role == "support":
+        return {
+            "ok": False,
+            "error": "invalid_argument",
+            "reason": (
+                "support staff have no orders of their own; "
+                "look up specific orders with get_order instead"
+            ),
+        }
+    with db.connection() as conn:
+        if ctx.role == "shopper":
+            orders = db.list_orders_for_user(conn, ctx.user_id, DEFAULT_ORDER_LIMIT)
+        else:
+            orders = db.list_orders_for_store(conn, ctx.store_id, DEFAULT_ORDER_LIMIT)
+    public = [o.to_public_dict() for o in orders]
+    return {"ok": True, "orders": public, "count": len(public)}
 
 
 def cancel_order(ctx: AuthContext, order_id: int, reason: str) -> dict[str, Any]:
@@ -167,8 +222,25 @@ def cancel_order(ctx: AuthContext, order_id: int, reason: str) -> dict[str, Any]
     paused = kill_switch("cancel_order")
     if paused is not None:
         return {"ok": False, "error": "paused", "reason": paused}
-    ### YOUR CODE HERE (HW1)
-    raise NotImplementedError("HW1: implement cancel_order")
+    with db.connection() as conn:
+        order = db.get_order(conn, order_id)
+        if order is None:
+            return {"ok": False, "error": "not_found", "reason": f"no order #{order_id}"}
+        if not can_cancel_order(ctx, order.user_id, order.store_id):
+            return permission_denied(
+                f"role '{ctx.role}' (user {ctx.user_id}) may not cancel order #{order_id}"
+            )
+        if order.status != "placed":
+            return {
+                "ok": False,
+                "error": "not_eligible",
+                "reason": (
+                    f"order #{order_id} has status '{order.status}'; "
+                    f"orders can be cancelled only before shipment"
+                ),
+            }
+        db.set_order_status(conn, order_id, "cancelled")
+    return {"ok": True, "order_id": order_id, "status": "cancelled"}
 
 
 def find_order(ctx: AuthContext, query: str) -> dict[str, Any]:
@@ -202,5 +274,123 @@ def find_order(ctx: AuthContext, query: str) -> dict[str, Any]:
         (at most 5), each as the dict returned by agent.db. If no orders
         match, return {"ok": True, "orders": []}.
     """
-    ### YOUR CODE HERE (HW1)
-    raise NotImplementedError("HW1: implement find_order")
+    terms = _search_terms(query)
+    if not terms:
+        return {"ok": True, "orders": []}
+
+    if ctx.role == "shopper":
+        scope: dict[str, Any] = {"user_id": ctx.user_id}
+    elif ctx.role == "merchant" and ctx.store_id is not None:
+        scope = {"store_id": ctx.store_id}
+    elif ctx.role == "support":
+        scope = {"all_orders": True}
+    else:
+        return permission_denied(f"role '{ctx.role}' may not search orders")
+
+    with db.connection() as conn:
+        candidates = db.list_order_search_candidates(conn, **scope)
+        titles = {p.id: p.title for p in db.list_products(conn)}
+
+    # Typo-tolerant: a query term matches a title word when their fuzzy
+    # similarity is at least FUZZY_WORD_THRESHOLD ("vace" finds "Vase").
+    # Keep only the orders that match the most query terms, so "heavy vase"
+    # prefers a Heavy-Duty Vase over every other vase. Candidates are already
+    # newest first, and the filter preserves that order.
+    word_hits: dict[str, set[str]] = {}
+    scored = []
+    for order in candidates:
+        title = titles.get(order.product_id, "")
+        if title not in word_hits:
+            title_words = _WORD_RE.findall(title.lower())
+            word_hits[title] = {
+                term
+                for term in terms
+                if any(fuzz.ratio(term, word) >= FUZZY_WORD_THRESHOLD for word in title_words)
+            }
+        hits = len(word_hits[title])
+        if hits:
+            scored.append((hits, order))
+    if not scored:
+        return {"ok": True, "orders": []}
+    best = max(hits for hits, _ in scored)
+    matches = [order for hits, order in scored if hits == best]
+    return {"ok": True, "orders": [o.to_public_dict() for o in matches[:FIND_ORDER_LIMIT]]}
+
+
+FIND_ORDER_LIMIT = 5
+FUZZY_WORD_THRESHOLD = 75
+_WORD_RE = re.compile(r"[a-z0-9]+")
+# Words people use to describe *when* or *that* they ordered something, which
+# never name the product.
+_FILLER_WORDS = frozenset(
+    "a an and the my me i it its that this these those for from of on in with "
+    "bought buy ordered order orders purchased got get item items thing things one "
+    "last week weeks month months year years yesterday today ago recently recent "
+    "about some was were".split()
+)
+
+
+def _search_terms(query: str) -> list[str]:
+    """Product words from a natural-language query, without filler words."""
+    return [
+        w for w in _WORD_RE.findall(query.lower()) if len(w) >= 3 and w not in _FILLER_WORDS
+    ]
+
+
+def list_customer_orders(ctx: AuthContext, customer_user_id: int) -> dict[str, Any]:
+    """List one customer's recent orders, for support staff. Risk tier: read.
+
+    Added beyond the five homework holes: support may view any order
+    (SPEC.md AUTH-1) but had no way to see a given customer's orders without
+    knowing each order id.
+
+    Access rule: support only. Shoppers use list_my_orders and merchants are
+    limited to their own store, so any other role gets permission_denied. The
+    tool is registered only for support; this check keeps the rule in code
+    even if the registration changes.
+
+    Args:
+        ctx: The caller's auth context.
+        customer_user_id: The shopper whose orders to list.
+
+    Returns:
+        {"ok": True, "customer_user_id": int, "orders": [...], "count": int,
+        "total_orders": int, "truncated": bool} with at most
+        DEFAULT_ORDER_LIMIT orders, newest first, each as
+        agent.db.Order.to_public_dict(). total_orders counts the customer's
+        whole history and truncated is True when orders were left out, so the
+        agent never presents a capped list as complete (SPEC.md RESP-3). A
+        shopper with no orders yields an empty list.
+        {"ok": False, "error": "not_found", ...} if no user has that id.
+        {"ok": False, "error": "invalid_argument", ...} if the user is not a
+        shopper (merchants and support staff have no orders of their own).
+    """
+    if ctx.role != "support":
+        return permission_denied(
+            f"role '{ctx.role}' (user {ctx.user_id}) may not list another customer's orders"
+        )
+    with db.connection() as conn:
+        customer = db.get_user(conn, customer_user_id)
+        if customer is None:
+            return {"ok": False, "error": "not_found", "reason": f"no user #{customer_user_id}"}
+        if customer.role != "shopper":
+            return {
+                "ok": False,
+                "error": "invalid_argument",
+                "reason": (
+                    f"user #{customer_user_id} is a {customer.role}, not a shopper, "
+                    f"and has no orders of their own"
+                ),
+            }
+        # The complete history, so the result can say how many orders exist
+        # beyond the ones returned.
+        all_orders = db.list_order_search_candidates(conn, user_id=customer_user_id)
+    public = [o.to_public_dict() for o in all_orders[:DEFAULT_ORDER_LIMIT]]
+    return {
+        "ok": True,
+        "customer_user_id": customer_user_id,
+        "orders": public,
+        "count": len(public),
+        "total_orders": len(all_orders),
+        "truncated": len(all_orders) > len(public),
+    }
