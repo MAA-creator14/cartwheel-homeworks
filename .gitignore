@@ -19,3 +19,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 scenarios/demo_pilot_gt.json
+
+# HW4 review app trace cache (trace content; rebuilt from Langfuse)
+analysis/review_app/.cache/
