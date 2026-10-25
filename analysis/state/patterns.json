@@ -1,1 +1,322 @@
-{"modes": []}
+{
+  "modes": [
+    {
+      "id": "unbacked_promise",
+      "name": "unbacked_promise",
+      "status": "candidate",
+      "definition": "The reply tells the user what will happen next, or what a human will do, and neither a policy nor a tool result supports it.",
+      "boundary": "The route is right, but the reply promises an outcome nothing guarantees (e.g. 'will approve'). If the route itself is wrong, label wrong_resolution_route instead.",
+      "requirement": "RESP-3 (do not invent), RESP-1 (policy-backed claims)",
+      "evaluator": "llm_judge",
+      "nearest_neighbor": "wrong_resolution_route",
+      "origin_annotation_ids": [
+        "amvie3s19mjhk",
+        "amvidq3kt2n46",
+        "amvhpytl0jdmp",
+        "amvj4w8gamr6g",
+        "amvj6h2v6z0xm",
+        "amvm7hl8cvl6a",
+        "amvm8ctp70l2y",
+        "amvm85om2f8po"
+      ],
+      "positive_trace_ids": [
+        "a43a14e39b981b515912e137d81cd444",
+        "0230bf77392b64dc88a29457f3534d81",
+        "79bdc3b146015f7220f7afc8bde04865",
+        "878b63db029045e3ee9172426b2a61f1",
+        "f81efdc996eb2c0bc914bcf1a72f102e",
+        "16ad949b308870b58d559a8c6cb7cb96",
+        "1fc0991258eb548d5c12430083eaf72a",
+        "6fcc7b2f9fbfabc01c0c791fa4fa2920",
+        "65e4b2ce4f0d21d2e584a9c7fe054f25"
+      ],
+      "close_negative_trace_ids": [
+        "9b70edd145d2c9a961daea4eadfac1b4",
+        "3b2953f67bdb5e89777d8684ef57ea27"
+      ],
+      "revisions": [
+        "2026-10-22 after batch1: kept as proposed by student",
+        "2026-10-24: student replaced retracted note amvj4umxm7s98 (final-0185 T1) with amvj4w8gamr6g (final-0185 T2, unbacked 'flagged for priority')",
+        "2026-10-24 axial round 2 (after batch2): student added final-0222 T1 (refund queued; reply says human will review and approve)",
+        "2026-10-24 axial round 3 (after batch3): student accepted positives 0051 T1, 0006 T2, 0225 T1 (exception offer, student chose this over wrong_resolution_route)",
+        "2026-10-24 Part D draft taxonomy: student approved boundary, nearest neighbour, evaluator type, and close negatives (drafted by agent)",
+        "2026-10-25 Part E labelling: student relabelled final-0224 T1 as Fail, so it moved from close negative to positive (moved by agent)"
+      ]
+    },
+    {
+      "id": "wrong_resolution_route",
+      "name": "wrong_resolution_route",
+      "status": "candidate",
+      "definition": "The reply misstates, leaves out, or does not act on the resolution route the SPEC requires: automatic refund at or below the threshold, refund queued for human review above it, dispute within the dispute window, or escalation under ESC-1 to ESC-4 (offering a required handoff instead of making it counts as a failure).",
+      "boundary": "The agent takes or describes the wrong path (refund vs queue vs dispute vs refuse vs escalate) for the order's eligibility, window, or amount. A right path with an over-promised outcome is unbacked_promise. A status- or deadline-only reply that does not offer or describe a refund is a Pass.",
+      "requirement": "ESC-1 to ESC-4; facts.yaml refund_auto_approve_threshold_usd, dispute_window_days",
+      "evaluator": "llm_judge (plus code check on eligibility facts)",
+      "nearest_neighbor": "unbacked_promise",
+      "origin_annotation_ids": [
+        "amvieuqn6h9kw",
+        "amvidyqga4n4l",
+        "amviecuga426v",
+        "amvj6x9iezvb7",
+        "amvjtomdkr7nt",
+        "amvm70sk8tlrs",
+        "amvmgxq9bir1a",
+        "amvmh4sh5bmw9"
+      ],
+      "positive_trace_ids": [
+        "b4048ba8fc4522d5833c4e8d7fd4dae4",
+        "148c1d56839e1269d1cb7eb24d63a21d",
+        "39b291b81790f8fe4cda412f7ba1d15e",
+        "a0eb46a83f9063366896189e59390f05",
+        "71f4d3ab9e03527409dd63df2492aa9c",
+        "4cdd39f1dcf250085450f6e64b35e4e1",
+        "da4f01714856747a28b36c90e42b9227",
+        "4dbd8009f71915e17de1ec0b437d21e1",
+        "6fcc7b2f9fbfabc01c0c791fa4fa2920"
+      ],
+      "close_negative_trace_ids": [
+        "b1d0a5d729d5a7680c50150206955e22",
+        "65e4b2ce4f0d21d2e584a9c7fe054f25"
+      ],
+      "revisions": [
+        "2026-10-22 after batch1: student merged 'refund route described wrongly or incompletely' with 'didn't escalate when it should have'; merged wording drafted by agent",
+        "2026-10-22: student approved the merged definition as written",
+        "2026-10-24: student removed final-0185 T1/T2 (premise was a wrong date; dispute route valid at 8 days, escalation in T2 correct)",
+        "2026-10-24: student removed final-0021 T1 (merchant asked status only; no refund requested, so ESC-1 route not triggered; statement true)",
+        "2026-10-24 axial round 2 (after batch2): student added final-0246 T1 (64 days after delivery, outside dispute window; dispute ticket opened anyway)",
+        "2026-10-24 axial round 2 (after batch2): student added final-0189 T1 (refund_eligible false, 84 days; reply implies refund may be approved)",
+        "2026-10-24 axial round 3 (after batch3): student accepted positive 0218 T1 (Saltbox 7-day window)",
+        "2026-10-24 Part D draft taxonomy: student approved boundary, nearest neighbour, evaluator type, and close negatives (drafted by agent)",
+        "2026-10-24 axial round 4 (after batch4): student kept final-0077 T1 and final-0075 T2 as positives (order above $100; reply offers to start a refund without saying it will be queued for human review, ESC-1). Boundary extended so status/deadline-only replies with no refund offer pass (consistent with final-0021 removal); wording drafted by agent",
+        "2026-10-25 Part E labelling: student relabelled final-0225 T1 as Fail, so it moved from close negative to positive (moved by agent)"
+      ]
+    },
+    {
+      "id": "statement_conflicts_with_order_status",
+      "name": "statement_conflicts_with_order_status",
+      "status": "candidate",
+      "definition": "The reply includes a statement that contradicts the tool data or doesn't apply to the order's state.",
+      "boundary": "The reply contradicts tool data or says something that does not apply to the order's state. If the tool data itself is missing or inconsistent and the reply hides it, label unflagged_missing_or_inconsistent_data.",
+      "requirement": "RESP-3, RESP-5",
+      "evaluator": "llm_judge",
+      "nearest_neighbor": "unflagged_missing_or_inconsistent_data",
+      "origin_annotation_ids": [
+        "amvj4dd6oa5xi",
+        "amvj4owu82fao",
+        "amviegw5g7jmt"
+      ],
+      "positive_trace_ids": [
+        "f583654e8fcbe03f2d9ff8f5f9528d16",
+        "1de1324defb4478d1a8713eef3ffda22",
+        "b8ef7799833249805ba525cf2020a520"
+      ],
+      "close_negative_trace_ids": [
+        "f28fb4ce5d48701159dc98f2694035c1",
+        "ef276e894b4488378d6ab2392ac18b31",
+        "7c4f3af47373c20721475a924fbe5ba0"
+      ],
+      "revisions": [
+        "2026-10-22 after batch1: kept as proposed by student",
+        "2026-10-24 Part D draft taxonomy: student approved boundary, nearest neighbour, evaluator type, and close negatives (drafted by agent)",
+        "2026-10-24 Part D AgentDebug comparison: student renamed irrelevant_or_contradictory_statement -> statement_conflicts_with_order_status. Old name joined two tests with 'or' and did not say what the statement conflicts with; all three positives (final-0027, final-0037, final-0001) add a remark that does not fit the order's current status. Name proposed by agent, chosen by student"
+      ],
+      "previous_names": [
+        "irrelevant_or_contradictory_statement"
+      ]
+    },
+    {
+      "id": "missing_decision_info",
+      "name": "missing_decision_info",
+      "status": "dropped",
+      "definition": "The reply leaves out something the user needs to decide.",
+      "boundary": "",
+      "requirement": "RESP-5",
+      "evaluator": "",
+      "nearest_neighbor": "",
+      "origin_annotation_ids": [
+        "amvj4bd1ye2eq"
+      ],
+      "positive_trace_ids": [
+        "9fb504be15c0fb7ab5c20ae2e23d5515"
+      ],
+      "close_negative_trace_ids": [],
+      "revisions": [
+        "2026-10-22 after batch1: kept as proposed by student",
+        "2026-10-24 axial round 2: student dropped the mode. Only one note (final-0139 T1, delivery fees) and no SPEC requirement behind it; 0067 T3 judged no failure. 0139 note kept as a possible SPEC gap."
+      ]
+    },
+    {
+      "id": "unflagged_missing_or_inconsistent_data",
+      "name": "unflagged_missing_or_inconsistent_data",
+      "status": "candidate",
+      "definition": "The reply presents a value as known when the tool data is missing it, or treats tool data as reliable when it is ambiguous (several matches) or internally inconsistent, instead of saying so.",
+      "boundary": "The problem starts in the data (missing field, internal inconsistency, several matches) and the reply hides it or fills the gap. A reply that contradicts clean tool data is statement_conflicts_with_order_status.",
+      "requirement": "RESP-3",
+      "evaluator": "llm_judge",
+      "nearest_neighbor": "statement_conflicts_with_order_status",
+      "origin_annotation_ids": [
+        "amvj5mif2tn7i",
+        "amvj4w8gamr6g",
+        "amvjtfnkkl8kn",
+        "amvjtdy5en0py",
+        "amvm7t1ogx2t3",
+        "amvm7mgc8wley",
+        "amvmgky5x61pn"
+      ],
+      "positive_trace_ids": [
+        "0f1ed6e91fddec8620819aa922382165",
+        "878b63db029045e3ee9172426b2a61f1",
+        "afeb24ec2d83bffe0e0c149b6931fb4f",
+        "822e64aca8bf637c9ab9ab3e5276ed35",
+        "2a161d6efcb0a4f7df1b2ea8442b6c1e",
+        "db778de1946871d02fc04485c592f96b",
+        "1fb4205ea1f7c8957ad18240944b57bb"
+      ],
+      "close_negative_trace_ids": [
+        "2d1c3cf74f7d877ac0f09d1358e3befe",
+        "138699b0fa88cac31daac78595961014",
+        "ddb98cd483c6dd9c338ac3db8aa8f135",
+        "536ebae2e75a9ce39d55f5a5657591d6",
+        "ab05eaf7f8f6428a5de355e10257fab1"
+      ],
+      "revisions": [
+        "2026-10-24 axial round 2 (after batch2): created by student from notes final-0185 T1, final-0185 T2, final-0024 T1, final-0022 T1; definition drafted by agent, pending student approval",
+        "2026-10-24: student approved the definition as written",
+        "2026-10-24 batch3: final-0199 T1 and final-0203 T1 recorded as close negatives (agent flagged the -$5 price / blank title)",
+        "2026-10-24 axial round 3 (after batch3): student accepted positives 0201, 0177 T1; close negatives 0042, 0045, 0066 T1 (agent asked which order)",
+        "2026-10-24 Part D draft taxonomy: student approved boundary, nearest neighbour, evaluator type, and close negatives (drafted by agent)",
+        "2026-10-24 axial round 4 (after batch4): student revised final-0182 T1 note to RESP-3 (order 8001 seeded defect, same as final-0185) and accepted it as a positive"
+      ]
+    },
+    {
+      "id": "missing_policy_citation",
+      "name": "missing_policy_citation",
+      "status": "candidate",
+      "definition": "The reply states a fact or rule that comes from a policy document (return or dispute window, refund threshold or auto-approval, refund timing, fee, cancellation rule) and does not name that policy's identifier in the same reply. A citation in an earlier turn does not count. Numbers that come from the user (such as a budget) or from order data (dates, totals, shipping time) are not policy claims.",
+      "boundary": "The claim is backed by a policy but the reply does not name its identifier. If no policy backs the claim, label unbacked_promise. A policy fact repeated from a tool result (e.g. the issue_refund note '5 to 10 business days') still needs the identifier.",
+      "requirement": "RESP-1",
+      "evaluator": "code_check (policy number or rule in reply without a cw-/store- identifier)",
+      "nearest_neighbor": "unbacked_promise",
+      "origin_annotation_ids": [
+        "amvjtbuq8g0b4",
+        "amvj6uvggiezd",
+        "amvj5atvi83oj",
+        "amvm73uuysl0i",
+        "amvm7f0fu6gfl",
+        "amvm7b52x842t",
+        "amvm7kmsudcdi",
+        "amvm7jg8mm9i5"
+      ],
+      "positive_trace_ids": [
+        "cb18cb9b4a42758291ee6fe053f683d1",
+        "a078d1cce808138d467ca348c818dcd3",
+        "9f9cb160d15e3beca9c744a0f0f0db05",
+        "b1d0a5d729d5a7680c50150206955e22",
+        "52b0889fc857a2be93579994fe8d6b85",
+        "65e4b2ce4f0d21d2e584a9c7fe054f25",
+        "4b3efc47ab159e72f3ec37880983c0da",
+        "065555f0aecd85a9a16e2ecb1b59a405",
+        "0725a2395a4d67f11d0b0a74fb271c6d",
+        "d1c69cdd0b578fd0f9fc7851569b9429",
+        "6842393727a6a2c5c750c6116e2f965a",
+        "ab9c7f1df3535d17f581128e192455c7",
+        "dba3ca018018aff335398c5108003ff9",
+        "03f9ef5d973004d0a46bf696d2a4491e",
+        "a9166c2efba6978fdc4d678124773fb0",
+        "b9082b0e9ac85e77f639d094e6db9fd1",
+        "74672b37bc8caa55d510fd07ca35eddf",
+        "9c9f8e7c7d7910c60d737198ab420ab9",
+        "f0de53001accb776871e919eb0aaf162",
+        "eb2bc1688f6ea72c3dec4b4418b794c4",
+        "481261eb09e2ed666513101b8929f095",
+        "3bcd5816b789328db0146447d5c93c8f",
+        "92b0ceebf4e6ccb65b8a4f550c2d0802",
+        "e6244ef822f05d0b2b19e6f244e34dd8",
+        "22737f9812edc82b4c390925af1e084c",
+        "8cc4be35c962d3956cb66a7be454a117",
+        "45648aae0c516e26fb148dffacc0c3df",
+        "2647c3368dbb76db43415ab7bb23fc04"
+      ],
+      "close_negative_trace_ids": [
+        "67c8f9285f351231ab550c4bed8e29de",
+        "9638757a35e407a4864d3db3700fba3a",
+        "6fcc7b2f9fbfabc01c0c791fa4fa2920",
+        "97e569a13605de73089488d4976bdf06",
+        "a2454998e9cc14b43ee754e1ebe5af05",
+        "305fa2d33b9bebf42e151b7d43fb7a5b",
+        "8f869d8d2c45d2267921ec63e97d3ef4"
+      ],
+      "revisions": [
+        "2026-10-24 axial round 2 (after batch2): created by student from notes final-0062 T1, final-0245 T2, final-0230 T2; definition drafted by agent, pending student approval",
+        "2026-10-24: student approved the definition as written",
+        "2026-10-24 axial round 3 (after batch3): student accepted positives 0156, 0221, 0224, 0227, 0064 T1; close negatives 0118, 0104 T1",
+        "2026-10-24 Part D draft taxonomy: student approved boundary, nearest neighbour, evaluator type, and close negatives (drafted by agent)",
+        "2026-10-24 Part D search round 1 (sug-mpc-r1-*): 14 accepted -> positives, 4 rejected (0134, 0136, 0137 user budget; 0184 shipping time from order dates) -> close negatives. Definition revised (agent draft, student chose this wording over a Pass/Fail rewrite): citation required in the same reply (0076/0078/0079/0080 T2 accepted although T1 cited cw-returns); refund timing and auto-approval count as policy facts; user and order-data numbers excluded",
+        "2026-10-24 Part D search round 2 (sug-mpc-r2-*, revised filter): 6 hits, all accepted by student -> positives. Student boundary decision: repeating a policy fact still needs the identifier even when a tool returned it (consistent with round 1; no earlier trace needs rechecking)"
+      ],
+      "previous_definitions": [
+        "The reply makes a claim derived from a policy document (window, threshold, fee, cancellation rule) without citing that policy's identifier."
+      ]
+    },
+    {
+      "id": "unexplained_escalation",
+      "name": "unexplained_escalation",
+      "status": "candidate",
+      "definition": "The agent hands the case to a human, and the reply does not say why a human is needed.",
+      "boundary": "Escalating is correct, but the reply does not say why a human is needed. If escalating was the wrong path, label wrong_resolution_route.",
+      "requirement": "RESP-4",
+      "evaluator": "llm_judge",
+      "nearest_neighbor": "wrong_resolution_route",
+      "origin_annotation_ids": [
+        "amvj6ibxvhwj4",
+        "amvhq3yamxwpw",
+        "amvmfzguv1hxr",
+        "amvmfzgvivnbn"
+      ],
+      "positive_trace_ids": [
+        "94e344217645b60decb50b396447cc74",
+        "5eb59d076b4176b82647e7da44f4fe82",
+        "cce7e5a073ff2edb03807a69b35036c8",
+        "fcd6921f9ca1fe3f91c344fef73bcccd"
+      ],
+      "close_negative_trace_ids": [
+        "17f6212d8643652d77776d40f7c5dd89",
+        "b1d0a5d729d5a7680c50150206955e22",
+        "4cdd39f1dcf250085450f6e64b35e4e1"
+      ],
+      "revisions": [
+        "2026-10-24 axial round 2 (after batch2): created by student from notes final-0159 T1, final-0155 T1; definition drafted by agent, pending student approval",
+        "2026-10-24: student approved the definition as written",
+        "2026-10-24 axial round 3 (after batch3): student accepted positives 0162, 0250 T1 (student revised from no failure for consistency with 0159; note wording drafted by agent); close negative 0196 T1",
+        "2026-10-24 Part D draft taxonomy: student approved boundary, nearest neighbour, evaluator type, and close negatives (drafted by agent)"
+      ]
+    }
+  ],
+  "spec_gaps": [
+    {
+      "annotation_id": "amvj4bd1ye2eq",
+      "scenario_id": "final-0139",
+      "turn": 1,
+      "gap": "Should product/price answers say whether prices exclude delivery fees? No SPEC requirement covers this.",
+      "status": "open",
+      "recorded": "2026-10-24"
+    }
+  ],
+  "agentdebug_comparison": {
+    "recorded": "2026-10-24",
+    "source": "AgentDebug AgentErrorTaxonomy, arXiv 2509.25370",
+    "mapping": {
+      "unbacked_promise": "Hallucination (memory/reflection)",
+      "wrong_resolution_route": "Constraint Ignorance (planning)",
+      "statement_conflicts_with_order_status": "Outcome Misinterpretation (reflection), partial",
+      "unflagged_missing_or_inconsistent_data": "Hallucination / False Memory (memory), partial",
+      "missing_policy_citation": "none (Cartwheel RESP-1)",
+      "unexplained_escalation": "none (Cartwheel RESP-4)"
+    },
+    "omissions_checked": [
+      "Parameter Error: final-0146, final-0149 bad first store-id call, recovered; student judged no_failure -> no mode",
+      "Tool/Environment Error: order 8001 seeded data defect is not agent fault; supports unflagged_missing_or_inconsistent_data boundary (reply hides it, not the data)",
+      "Progress Misassessment (RESP-2): no confirmed positives (final-0039 T2 resolved by turn 1 auto_approved)"
+    ],
+    "decision": "Student: no mode added (no human-annotation support). Unclear name fixed by renaming irrelevant_or_contradictory_statement."
+  }
+}

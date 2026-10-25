@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<!--
+  HW4 review interface for Cartwheel traces. Served by analysis/review_app/server.py.
+
+  Changes from the reference UI (analysis/ui/index.html), made after reviewing
+  traces in the standard Langfuse view:
+    - one page per conversation: traces grouped by cartwheel.session_id, turns in order
+    - wrapper spans and empty model-call generations hidden; tool call + full result shown
+    - tool results shown in full; ok:false and status values stand out
+    - a note or "no failure observed" per turn; notes keep their edit history
+    - answer key hidden until every turn has a judgment
+    - Taxonomy, Label (present/absent per trace and mode), and Progress tabs
+    - SPEC quick reference drawer
+  Kept from the reference: role hues, a tool call grouped with its result,
+  margin notes, purple agent suggestions with explicit accept/reject.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cartwheel trace review</title>
+<style>
+  :root {
+    --user: #2563eb; --agent: #059669; --tool: #b45309; --retrieval: #0891b2;
+    --bg: #f6f6f7; --panel: #fff; --ink: #1a1a1a; --muted: #6b7280; --line: #e5e7eb;
+    --hl: #fde68a; --sugg: #ede9fe; --sugg-border: #7c3aed; --err: #dc2626; --ok: #059669;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         color: var(--ink); background: var(--bg); }
+  code, pre, .mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+  button { font: inherit; cursor: pointer; }
+  header { position: sticky; top: 0; z-index: 50; display: flex; gap: 14px; align-items: center;
+           padding: 9px 16px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0; }
+  .tabs button, .btn { border: 1px solid var(--line); background: var(--bg); padding: 5px 12px; border-radius: 6px; }
+  .tabs button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .spacer { flex: 1; }
+  .muted { color: var(--muted); font-size: 13px; }
+  select, input[type=text], textarea { font: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: #fff; }
+  .view { display: none; padding: 18px 16px 120px; }
+  .view.active { display: block; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  /* session header */
+  .s-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; padding-bottom: 10px;
+            border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  .s-head .sid { font-weight: 700; font-size: 17px; }
+  .chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 9px;
+          background: #f3f4f6; color: #374151; }
+  .chip.err { background: #fee2e2; color: var(--err); }
+  .chip.okc { background: #d1fae5; color: #065f46; }
+  .chip.warn { background: #fef3c7; color: #92400e; }
+  .chip.batch { background: #e0e7ff; color: #3730a3; }
+  details.sys summary, details.raw summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  details.sys pre { max-height: 360px; overflow: auto; }
+
+  /* turns */
+  .turn { margin-bottom: 26px; }
+  .turn-head { display: flex; gap: 12px; align-items: center; font-size: 12px; font-weight: 700;
+               text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+               border-top: 2px solid var(--line); padding-top: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .turn-head a { color: var(--user); text-transform: none; font-weight: 400; }
+  .turn-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+  .msg { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line);
+         border-radius: 8px; padding: 9px 13px; margin-bottom: 10px; }
+  .msg .role { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .msg.user { border-left-color: var(--user); } .msg.user .role { color: var(--user); }
+  .msg.agent { border-left-color: var(--agent); } .msg.agent .role { color: var(--agent); }
+  .msg .text { white-space: pre-wrap; word-wrap: break-word; }
+  .msg.agent .text { white-space: normal; }
+  .msg.agent table { border-collapse: collapse; margin: 6px 0; font-size: 13.5px; }
+  .msg.agent td, .msg.agent th { border: 1px solid var(--line); padding: 3px 8px; text-align: left; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--tool);
+          border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+  .step.failed { border-left-color: var(--err); border-color: #fecaca; }
+  .step .call { padding: 7px 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .step .fn { font-weight: 700; color: var(--tool); }
+  .step .args { font-size: 12.5px; color: #374151; }
+  .step .result { border-top: 1px dashed var(--line); padding: 7px 12px; }
+  .step .result .lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
+  pre.json { margin: 0; font-size: 12.5px; white-space: pre-wrap; word-break: break-word; max-height: 460px; overflow: auto; }
+  .parallel { border: 1px dashed var(--tool); border-radius: 10px; padding: 8px 8px 0; margin-bottom: 10px; }
+  .parallel > .muted { margin: -2px 0 6px 4px; }
+  .hits { margin: 0; padding: 0; list-style: none; }
+  .hits li { border-left: 3px solid var(--retrieval); padding: 3px 8px; margin-bottom: 6px; font-size: 13px; }
+  .hits .pid { font-weight: 700; color: var(--retrieval); }
+  .policy-body { white-space: pre-wrap; font-size: 13px; max-height: 460px; overflow: auto; }
+  .turn-actions { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
+  .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .btn.good { border-color: var(--ok); color: var(--ok); }
+  .btn.bad { border-color: var(--err); color: var(--err); }
+  .btn.small { font-size: 12px; padding: 2px 8px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  /* highlights and margin */
+  .hl { background: var(--hl); border-radius: 2px; cursor: pointer; }
+  @keyframes flash { 0%, 60% { box-shadow: 0 0 0 3px #f59e0b; } 100% { box-shadow: none; } }
+  .flash { animation: flash 1.6s ease-out; }
+  .earlier { background: #fafaf9; border: 1px solid var(--line); border-left: 4px solid #a8a29e; border-radius: 8px;
+             padding: 6px 10px; margin-bottom: 10px; font-size: 13px; }
+  .earlier .ttl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 4px; }
+  .earlier details { border-top: 1px dashed var(--line); padding: 3px 0; }
+  .earlier details:first-of-type { border-top: 0; }
+  .earlier summary { cursor: pointer; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; list-style-position: outside; }
+  .earlier summary .fn { font-weight: 700; color: var(--tool); }
+  .earlier .facts { color: #374151; }
+  .earlier .full { margin: 4px 0 4px 18px; }
+  .s-notes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 10px; font-size: 13px; }
+  .s-notes .n { border: 1px solid var(--line); border-left: 4px solid #f59e0b; background: var(--panel);
+                border-radius: 6px; padding: 2px 8px; cursor: pointer; max-width: 380px; }
+  .s-notes .n.nofail { border-left-color: var(--ok); }
+  .s-notes .n:hover { border-color: var(--ink); }
+  #lock { font-size: 13px; }
+  .hl.sg { background: var(--sugg); border-bottom: 2px dashed var(--sugg-border); }
+  .margin { position: sticky; top: 64px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid #f59e0b;
+          border-radius: 6px; padding: 7px 9px; font-size: 13px; margin-bottom: 8px; }
+  .note.nofail { border-left-color: var(--ok); }
+  .note.retracted { opacity: .5; text-decoration: line-through; }
+  .note .quote { color: var(--muted); font-style: italic; margin-bottom: 3px; }
+  .note .body { white-space: pre-wrap; }
+  .note .acts { display: flex; gap: 6px; margin-top: 5px; }
+  .note.sugg { border-left-color: var(--sugg-border); background: #faf5ff; }
+  .note .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--sugg-border); }
+  .note textarea { width: 100%; min-height: 60px; margin-top: 4px; }
+  .empty { color: var(--muted); font-size: 13px; }
+  .lab { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--ink);
+         border-radius: 6px; padding: 7px 9px; font-size: 12.5px; margin-bottom: 8px; }
+  .lab .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .lab .lrow { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; justify-content: space-between;
+               border-top: 1px dashed var(--line); padding: 4px 0; }
+  #defpop { position: fixed; z-index: 210; display: none; width: 420px; max-width: calc(100vw - 16px); background: var(--panel);
+            border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: 9px; font-size: 13px; }
+  th.mname { cursor: pointer; }
+  th.mname:hover { text-decoration: underline; }
+  .lab .mname { cursor: pointer; overflow-wrap: anywhere; }
+  .lab .mname:hover { text-decoration: underline; }
+  .lab .ldef { flex-basis: 100%; background: #f9fafb; border-radius: 4px; padding: 4px 6px; color: #374151; }
+  .lab .lev { flex-basis: 100%; font-size: 12px; }
+  .lab .lv.on.fail { background: #fee2e2; border-color: var(--err); color: var(--err); font-weight: 700; }
+  .lab .lv.on.pass { background: #d1fae5; border-color: var(--ok); color: #065f46; font-weight: 700; }
+  .lab .acts { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+
+  #popover { position: absolute; z-index: 200; display: none; width: 380px; background: var(--panel);
+             border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: 9px; }
+  #popover textarea { width: 100%; min-height: 70px; }
+  #popover .quote { color: var(--muted); font-style: italic; font-size: 12.5px; margin-bottom: 4px; max-height: 60px; overflow: auto; }
+
+  #answer { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: none; }
+
+  /* tables in Taxonomy / Label / Progress */
+  table.grid { border-collapse: collapse; width: 100%; background: var(--panel); font-size: 13px; }
+  table.grid th, table.grid td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+  table.grid th { background: #f9fafb; position: sticky; top: 52px; }
+  td.cell { cursor: pointer; text-align: center; font-weight: 700; min-width: 70px; }
+  td.cell.fail { background: #fee2e2; color: var(--err); }
+  td.cell.pass { background: #d1fae5; color: #065f46; }
+  td.cell.none { color: #d1d5db; }
+  td.cell.sel { outline: 2px solid var(--ink); }
+  .mode-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .mode-card h3 { margin: 0 0 6px; font-family: ui-monospace, monospace; font-size: 15px; }
+  .mode-card dl { display: grid; grid-template-columns: 170px 1fr; gap: 4px 12px; margin: 0; font-size: 13.5px; }
+  .mode-card dt { color: var(--muted); }
+  .mode-card dd { margin: 0; }
+  a.tlink { color: var(--user); cursor: pointer; text-decoration: underline; }
+  #label-editor { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+                  margin-bottom: 12px; display: none; position: sticky; top: 52px; z-index: 20; }
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; }
+  .stat b { font-size: 20px; display: block; }
+
+  /* SPEC drawer */
+  #spec { position: fixed; top: 0; right: 0; bottom: 0; width: 440px; background: var(--panel); z-index: 120;
+          border-left: 1px solid var(--line); box-shadow: -6px 0 20px rgba(0,0,0,.08); padding: 12px 14px; overflow: auto; display: none; }
+  #spec.open { display: block; }
+  #spec .req { border-bottom: 1px solid var(--line); padding: 5px 0; font-size: 13px; }
+  #spec .req b { font-family: ui-monospace, monospace; }
+  #toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--ink); color: #fff;
+           padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 300; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cartwheel trace review</h1>
+  <div class="tabs">
+    <button data-view="review" class="active">Review</button>
+    <button data-view="taxonomy">Taxonomy</button>
+    <button data-view="label">Label</button>
+    <button data-view="progress">Progress</button>
+  </div>
+  <div class="spacer"></div>
+  <span id="nav">
+    <select id="scope"></select>
+    <button class="btn" id="prev" title="previous (k)">&larr;</button>
+    <span class="muted" id="pos">0 / 0</span>
+    <button class="btn" id="next" title="next (j)">&rarr;</button>
+    <input type="text" id="jump" placeholder="final-0039" size="11" />
+  </span>
+  <button class="btn" id="spec-toggle">SPEC</button>
+  <span class="muted" id="status"></span>
+</header>
+
+<div id="review" class="view active"><div class="wrap">
+  <div id="s-head"></div>
+  <div id="answer"></div>
+  <div id="turns"></div>
+</div></div>
+
+<div id="taxonomy" class="view"><div class="wrap" id="taxonomy-body"></div></div>
+
+<div id="defpop"></div>
+<div id="label" class="view"><div class="wrap">
+  <div id="label-editor"></div>
+  <div id="label-body"></div>
+</div></div>
+
+<div id="progress" class="view"><div class="wrap" id="progress-body"></div></div>
+
+<div id="spec">
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+    <b>SPEC quick reference</b><span class="spacer"></span>
+    <button class="btn small" id="spec-close">close</button>
+  </div>
+  <input type="text" id="spec-filter" placeholder="filter, e.g. RESP or refund" style="width:100%;margin-bottom:8px" />
+  <div id="spec-body"></div>
+</div>
+
+<div id="popover">
+  <div class="quote" id="pop-quote"></div>
+  <textarea id="pop-note" placeholder="What is the first failure here? Describe it in your own words, with the evidence. (Enter saves, Shift+Enter new line, Esc cancels)"></textarea>
+  <div style="display:flex;gap:6px;margin-top:6px">
+    <button class="btn primary small" id="pop-save">save note</button>
+    <button class="btn small" id="pop-cancel">cancel</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ------------------------------------------------------------------ state */
+const S = {
+  sessions: [], source: '', annotations: [], manifest: {batches: []}, patterns: {modes: []},
+  suggestions: [], labels: {}, spec: null, status: {},
+  scope: 'all', list: [], cur: 0, view: 'review', showRetracted: false,
+  answerShown: {}, labelSel: null,
+  labDraft: {},              // "trace_id|mode" -> {label, evidence}, not yet saved
+  labDefOpen: {},            // mode -> definition shown in the label panel
+};
+const byTrace = {};        // trace_id -> {session, turnIndex}
+
+const api = {
+  async get(p) { const r = await fetch(p); const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j; },
+  async post(p, body) {
+    const r = await fetch(p, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j;
+  },
+};
+
+/* --------------------------------------------------------------- helpers */
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const pretty = v => typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n) + '…' : s; };
+const short = id => String(id || '').slice(0, 8);
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
+
+function md(text) {
+  // Light markdown for agent replies: tables, bold, inline code, line breaks.
+  const lines = String(text || '').split('\n');
+  const out = []; let i = 0;
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  while (i < lines.length) {
+    if (/^\s*\|.*\|\s*$/.test(lines[i])) {
+      const rows = [];
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { rows.push(lines[i]); i++; }
+      const cells = r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const body = rows.filter(r => !/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      out.push('<table>' + body.map((r, k) => '<tr>' + cells(r).map(c =>
+        k === 0 ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`).join('') + '</tr>').join('') + '</table>');
+    } else { out.push(inline(lines[i]) + '<br>'); i++; }
+  }
+  return out.join('');
+}
+
+const liveAnns = tid => S.annotations.filter(a => a.trace_id === tid && (S.showRetracted || !a.retracted));
+const judged = tid => S.annotations.some(a => a.trace_id === tid && !a.retracted);
+function batchOf(tid) {
+  for (const b of S.manifest.batches || []) if ((b.traces || []).some(t => t.trace_id === tid)) return b.name;
+  return null;
+}
+function reviewSet() {
+  const out = [];
+  for (const b of S.manifest.batches || []) for (const t of b.traces || []) out.push({...t, batch: b.name});
+  return out;
+}
+
+/* ------------------------------------------------------------- loading */
+async function loadState() {
+  const [ann, man, pat, sug, lab] = await Promise.all([
+    api.get('/api/annotations'), api.get('/api/manifest'), api.get('/api/patterns'),
+    api.get('/api/suggestions'), api.get('/api/labels')]);
+  const sig = JSON.stringify([ann, man, pat, sug, lab]);
+  const changed = sig !== S._sig; S._sig = sig;
+  S.annotations = ann.annotations || []; S.manifest = man.batches ? man : {batches: []};
+  S.patterns = pat.modes ? pat : {modes: []}; S.suggestions = Array.isArray(sug) ? sug : []; S.labels = lab || {};
+  return changed;
+}
+async function boot() {
+  const ses = await api.get('/api/sessions');
+  S.sessions = ses.sessions; S.source = ses.source;
+  S.sessions.forEach(s => s.turns.forEach((t, k) => byTrace[t.trace_id] = {session: s, turn: k}));
+  [S.spec, S.status] = await Promise.all([api.get('/api/spec'), api.get('/api/status')]);
+  await loadState();
+  renderStatus(); buildScope(); openFromHash(false); renderSpec(); renderAll();
+  window.addEventListener('hashchange', () => openFromHash(true));
+  setInterval(async () => {
+    try {
+      const busy = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)
+        || document.getElementById('popover').style.display === 'block';
+      if (await loadState() && !busy) { buildScope(true); renderAll(); }
+    } catch (e) {}
+  }, 3000);
+}
+/* http://127.0.0.1:8030/#final-0039 opens that conversation. */
+function openFromHash(render) {
+  const q = decodeURIComponent(location.hash.slice(1));
+  const i = q ? S.list.findIndex(x => x.scenario_id === q) : -1;
+  if (i < 0 || i === S.cur) return;
+  S.cur = i;
+  if (render) switchView('review');
+}
+function renderStatus() {
+  const w = S.status.langfuse_configured && S.status.langfuse_writes ? 'labels → Langfuse + local' : 'labels → local only';
+  document.getElementById('status').textContent = `${S.sessions.length} sessions · source: ${S.source} · ${w}`;
+}
+
+/* ---------------------------------------------------------- navigation */
+function buildScope(keep) {
+  const sel = document.getElementById('scope');
+  const prev = keep ? S.scope : 'all';
+  const opts = [['all', `All sessions (${S.sessions.length})`]];
+  (S.manifest.batches || []).forEach(b => opts.push([b.name, `${b.name} (${(b.traces || []).length} traces)`]));
+  opts.push(['unjudged', 'Review set: unjudged']);
+  opts.push(['pending', pendingLabel()]);
+  opts.push(['unlabelled', 'Review set: labels incomplete']);
+  sel.innerHTML = opts.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
+  S.scope = opts.some(o => o[0] === prev) ? prev : 'all';
+  sel.value = S.scope;
+  computeList(keep);
+}
+// The session list is not recomputed after a decision, so a decided session stays
+// open; only the count in the dropdown label changes.
+const pendingSuggestions = () => S.suggestions.filter(x => (x.status || 'pending') === 'pending');
+const pendingLabel = () => {
+  const p = pendingSuggestions();
+  return `Pending suggestions (${p.length} in ${new Set(p.map(x => byTrace[x.trace_id]?.session.session_id)).size} sessions)`;
+};
+function computeList(keep) {
+  const curId = S.list[S.cur]?.session_id;
+  let ids;
+  if (S.scope === 'all') ids = S.sessions.map(s => s.session_id);
+  else {
+    const traces = S.scope === 'unjudged' ? reviewSet().filter(t => !judged(t.trace_id))
+      : S.scope === 'pending' ? pendingSuggestions()
+      : S.scope === 'unlabelled' ? reviewSet().filter(t => labelModes().some(m => !(S.labels[m] || {})[t.trace_id]))
+      : ((S.manifest.batches || []).find(b => b.name === S.scope)?.traces || []);
+    ids = [...new Set(traces.map(t => byTrace[t.trace_id]?.session.session_id).filter(Boolean))];
+  }
+  S.list = ids.map(id => S.sessions.find(s => s.session_id === id));
+  const i = keep ? S.list.findIndex(s => s.session_id === curId) : -1;
+  S.cur = i >= 0 ? i : Math.min(S.cur, Math.max(0, S.list.length - 1));
+  if (!keep) S.cur = 0;
+}
+function gotoTrace(tid) {
+  const hit = byTrace[tid]; if (!hit) { toast('trace not found'); return; }
+  let i = S.list.findIndex(s => s.session_id === hit.session.session_id);
+  if (i < 0) { S.scope = 'all'; document.getElementById('scope').value = 'all'; computeList(); i = S.list.findIndex(s => s.session_id === hit.session.session_id); }
+  S.cur = i; switchView('review');
+  setTimeout(() => document.querySelector(`.turn[data-trace="${tid}"]`)?.scrollIntoView({block: 'start'}), 30);
+}
+document.getElementById('scope').onchange = e => { S.scope = e.target.value; computeList(); renderReview(); };
+document.getElementById('prev').onclick = () => { if (S.cur > 0) { S.cur--; renderReview(); scrollTo(0, 0); } };
+document.getElementById('next').onclick = () => { if (S.cur < S.list.length - 1) { S.cur++; renderReview(); scrollTo(0, 0); } };
+document.getElementById('jump').onkeydown = e => {
+  if (e.key !== 'Enter') return;
+  const q = e.target.value.trim(); const s = S.sessions.find(x => x.scenario_id === q || x.session_id.startsWith(q));
+  const t = s ? s.turns[0].trace_id : (byTrace[q] ? q : null);
+  if (t) { gotoTrace(t); e.target.value = ''; e.target.blur(); } else toast('no session or trace matches ' + q);
+};
+document.addEventListener('keydown', e => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || S.view !== 'review') return;
+  if (e.key === 'j') document.getElementById('next').click();
+  if (e.key === 'k') document.getElementById('prev').click();
+});
+function switchView(v) {
+  S.view = v;
+  document.getElementById('defpop').style.display = 'none';
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('active', x.id === v));
+  document.getElementById('nav').style.display = v === 'review' ? '' : 'none';
+  renderAll();
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => switchView(b.dataset.view));
+
+function renderAll() {
+  if (S.view === 'review') renderReview();
+  if (S.view === 'taxonomy') renderTaxonomy();
+  if (S.view === 'label') renderLabel();
+  if (S.view === 'progress') renderProgress();
+}
+
+/* --------------------------------------------------------------- review */
+function renderReview() {
+  const s = S.list[S.cur];
+  document.getElementById('pos').textContent = S.list.length ? `${S.cur + 1} / ${S.list.length}` : '0 / 0';
+  const head = document.getElementById('s-head'), turns = document.getElementById('turns');
+  const ans = document.getElementById('answer');
+  if (!s) { head.innerHTML = '<p class="empty">No sessions in this scope.</p>'; turns.innerHTML = ''; ans.style.display = 'none'; return; }
+  if (location.hash.slice(1) !== s.scenario_id) history.replaceState(null, '', '#' + s.scenario_id);
+  const left = s.turns.filter(t => !judged(t.trace_id)).length;
+  const allJudged = left === 0;
+  const lockTitle = 'The answer key is the expected outcome from the HW3 scenario. It stays locked until every turn has a note or "no failure observed", so you form your own judgment first.';
+  const sNotes = s.turns.flatMap(t => liveAnns(t.trace_id));
+  head.innerHTML = `<div class="s-head">
+      <span class="sid">${esc(s.scenario_id)}</span>
+      <span class="chip">${esc(s.role)}</span>
+      <span class="muted">user ${esc(s.user_id)}</span>
+      <span class="muted">${s.turns.length} turn${s.turns.length > 1 ? 's' : ''}</span>
+      <span class="muted mono">session ${short(s.session_id)}</span>
+      <span class="spacer"></span>
+      <button class="btn small" id="reveal" ${allJudged ? '' : 'disabled'} title="${esc(lockTitle)}">
+        ${allJudged ? (S.answerShown[s.session_id] ? 'Hide answer key' : 'Show answer key')
+          : `🔒 Answer key (judge ${left} more turn${left > 1 ? 's' : ''} to unlock)`}</button>
+      <label class="muted"><input type="checkbox" id="show-retracted" ${S.showRetracted ? 'checked' : ''}/> show retracted</label>
+    </div>
+    <div class="s-notes"><span class="muted">Notes in this session (${sNotes.length}):</span>
+      ${sNotes.map(a => `<span class="n ${a.kind === 'no_failure' ? 'nofail' : ''}" data-focus="${a.id}" title="${esc(a.note)}">T${a.turn}: ${esc(clip(a.note, 60))}</span>`).join('')
+        || '<span class="empty">none yet</span>'}</div>
+    <details class="sys"><summary>system prompt (as sent on turn 1)</summary><pre class="json">${esc(s.system_prompt)}</pre></details>`;
+  document.getElementById('show-retracted').onchange = e => { S.showRetracted = e.target.checked; renderReview(); };
+  document.getElementById('reveal').onclick = () => toggleAnswer(s);
+  if (S.answerShown[s.session_id] && allJudged) showAnswer(s); else ans.style.display = 'none';
+  turns.innerHTML = s.turns.map((t, k) => renderTurn(s, t, k)).join('');
+  wireTurns(s);
+  applyHighlights(s);
+  head.querySelectorAll('[data-focus]').forEach(n => n.onclick = () => focusAnn(n.dataset.focus));
+}
+
+/* Scroll to a note's highlighted text (or its margin card) and flash it. */
+function focusAnn(id) {
+  const spans = [...document.querySelectorAll(`.hl[data-ann="${CSS.escape(id)}"]`)];
+  const card = document.querySelector(`.note[data-ann="${CSS.escape(id)}"]`);
+  const targets = spans.length ? spans : (card ? [card] : []);
+  if (!targets.length) return;
+  targets[0].scrollIntoView({block: 'center', behavior: 'smooth'});
+  [...targets, card].filter(Boolean).forEach(el => { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); });
+}
+
+/* Key facts from a tool result, for the "Earlier in this session" strip. */
+function keyFacts(st) {
+  const r = st.result;
+  if (!r || typeof r !== 'object') return esc(clip(pretty(r), 100));
+  const pick = (o, keys) => keys.filter(k => o[k] !== undefined && o[k] !== null).map(k => `${k}=${JSON.stringify(o[k])}`);
+  const facts = pick(r, ['status', 'refund_id', 'ticket_id', 'order_id', 'amount_usd', 'policy_id', 'count', 'sla_hours', 'reason']);
+  if (r.order) facts.push(...pick(r.order, ['order_id', 'status', 'total_usd', 'refund_eligible', 'store_name']));
+  if (Array.isArray(r.orders)) facts.push(`orders=[${r.orders.slice(0, 6).map(o => o.order_id).join(', ')}${r.orders.length > 6 ? ', …' : ''}]`);
+  if (Array.isArray(r.results)) facts.push(`hits=[${r.results.map(h => h.policy_id).join(', ')}]`);
+  if (Array.isArray(r.products)) facts.push(`products=[${r.products.slice(0, 6).map(p => p.product_id).join(', ')}]`);
+  return esc(clip(facts.join(' · '), 220));
+}
+function renderEarlier(s, k) {
+  const rows = [];
+  s.turns.slice(0, k).forEach((t, j) => t.steps.forEach(st => {
+    const chip = st.ok === false ? `<span class="chip err">ok: false · ${esc(st.error || 'error')}</span>`
+      : st.ok === true ? '<span class="chip okc">ok</span>' : '';
+    const args = st.arguments && typeof st.arguments === 'object'
+      ? Object.entries(st.arguments).map(([a, v]) => `${a}=${JSON.stringify(v)}`).join(', ') : '';
+    rows.push(`<details><summary><span class="muted">T${j + 1}</span><span class="fn">🔧 ${esc(st.name)}</span>
+      <span class="mono muted">(${esc(clip(args, 80))})</span>${chip}<span class="facts mono">${keyFacts(st)}</span></summary>
+      <div class="full">${renderResult(st, false)}</div></details>`);
+  }));
+  const body = rows.join('') || '<div class="empty">No tool calls in earlier turns.</div>';
+  return `<div class="earlier"><div class="ttl">Earlier in this session: tool results from turn${k > 1 ? 's 1–' + k : ' 1'} (click a row for the full result)</div>${body}</div>`;
+}
+
+function renderTurn(s, t, k) {
+  const b = batchOf(t.trace_id);
+  const groups = [];
+  t.steps.forEach((st, i) => {
+    const g = groups.find(x => x.id === st.parallel_group);
+    if (g) g.steps.push([st, i]); else groups.push({id: st.parallel_group, steps: [[st, i]]});
+  });
+  const stepsHtml = groups.map(g => g.steps.length > 1
+    ? `<div class="parallel"><div class="muted">these ${g.steps.length} calls ran in parallel (same start time)</div>${g.steps.map(([st, i]) => renderStep(st, i)).join('')}</div>`
+    : renderStep(...g.steps[0])).join('');
+  const hasNote = judged(t.trace_id);
+  return `<section class="turn" data-trace="${t.trace_id}">
+    <div class="turn-head">Turn ${k + 1} of ${s.turns.length}
+      <span class="mono">trace ${short(t.trace_id)}</span>
+      <a href="${esc(t.langfuse_url)}" target="_blank" rel="noopener">open in Langfuse ↗</a>
+      <span>${t.model_calls} model calls · ${t.steps.length} tool calls</span>
+      ${b ? `<span class="chip batch">${esc(b)}</span>` : ''}
+      ${hasNote ? '<span class="chip okc">judged</span>' : '<span class="chip warn">not judged</span>'}
+    </div>
+    <div class="turn-grid">
+      <div class="turn-body">
+        ${k > 0 ? renderEarlier(s, k) : ''}
+        <div class="msg user"><div class="role">User</div><div class="text" data-target="user">${esc(t.user)}</div></div>
+        ${stepsHtml}
+        <div class="msg agent"><div class="role">Agent reply</div><div class="text" data-target="reply">${md(t.reply)}</div></div>
+        <div class="turn-actions">
+          <button class="btn small" data-act="note" data-trace="${t.trace_id}">write note</button>
+          ${hasNote ? '' : `<button class="btn good small" data-act="nofail" data-trace="${t.trace_id}">no failure observed</button>`}
+          <span class="muted">or select text in this turn to attach a note to it</span>
+        </div>
+      </div>
+      <div class="margin">${renderLabPanel(t.trace_id)}${renderMargin(t.trace_id)}</div>
+    </div>
+  </section>`;
+}
+
+function renderStep(st, i) {
+  const failed = st.ok === false;
+  const chips = [];
+  if (st.ok === true) chips.push('<span class="chip okc">ok</span>');
+  if (failed) chips.push(`<span class="chip err">ok: false · ${esc(st.error || 'error')}</span>`);
+  if (st.status) chips.push(`<span class="chip ${st.status === 'queued_for_approval' ? 'warn' : ''}">status: ${esc(st.status)}</span>`);
+  const args = st.arguments && typeof st.arguments === 'object'
+    ? Object.entries(st.arguments).map(([k, v]) => `${esc(k)}=${esc(typeof v === 'string' ? JSON.stringify(v) : JSON.stringify(v))}`).join(', ')
+    : esc(pretty(st.arguments));
+  return `<div class="step ${failed ? 'failed' : ''}">
+    <div class="call"><span class="fn">🔧 ${esc(st.name)}</span><span class="args mono">(${args})</span>${chips.join(' ')}</div>
+    <div class="result"><div class="lbl">result</div><div data-target="step:${i}">${renderResult(st, true)}</div></div>
+  </div>`;
+}
+
+/* withRaw=false omits the collapsed raw JSON, so the earlier-turns strip has
+   no hidden text that could be confused with this turn's evidence. */
+function renderResult(st, withRaw) {
+  const r = st.result;
+  if (st.name === 'search_help_center' && r && Array.isArray(r.results)) {
+    const hits = r.results.map(h => `<li><span class="pid">${esc(h.policy_id)}</span> · ${esc(h.title || '')} <span class="muted">score ${esc(h.score)}</span><div>${esc(h.snippet)}</div></li>`).join('');
+    return `<ul class="hits">${hits || '<li class="empty">no results</li>'}</ul>` +
+      (withRaw ? `<details class="raw"><summary>raw JSON</summary><pre class="json">${esc(pretty(r))}</pre></details>` : '');
+  }
+  if (st.name === 'get_policy' && r && r.body) {
+    const {body, ...rest} = r;
+    return `<pre class="json">${esc(pretty(rest))}</pre><div class="lbl" style="margin-top:6px">body</div><div class="policy-body">${esc(body)}</div>`;
+  }
+  return `<pre class="json">${esc(pretty(r))}</pre>`;
+}
+
+/* Part E: one Pass/Fail per final mode for a review-set trace. Clicks only
+   change a draft; nothing is written until "save", which posts each change
+   to /api/labels (local file + Langfuse score). */
+function renderLabPanel(tid) {
+  const modes = labelModes();
+  if (!batchOf(tid) || !modes.length) return '';
+  const done = modes.filter(m => (S.labels[m] || {})[tid]).length;
+  const rows = modes.map(m => {
+    const key = tid + '|' + m, saved = (S.labels[m] || {})[tid], d = S.labDraft[key];
+    const val = d ? d.label : saved?.label, ev = d ? d.evidence : (saved?.evidence || '');
+    const pm = (S.patterns.modes || []).find(x => x.name === m) || {};
+    const mark = saved ? (saved.langfuse_synced ? ' <span title="saved and in Langfuse">✓</span>' : ' <span title="saved locally only">⚠</span>') : '';
+    return `<div class="lrow"><span class="mono mname" data-def="${esc(m)}">${S.labDefOpen[m] ? '▾' : '▸'} ${esc(m)}</span>
+      <span>${['fail', 'pass'].map(v => `<button class="btn small lv ${val === v ? 'on ' + v : ''}" data-lab="${esc(key)}|${v}">${v === 'fail' ? 'Fail' : 'Pass'}</button>`).join(' ')}${mark}${d ? ' <span class="chip warn">unsaved</span>' : ''}</span>
+      ${S.labDefOpen[m] ? `<div class="ldef"><b>Definition.</b> ${esc(pm.definition || '')}${pm.boundary ? `<br><b>Boundary.</b> ${esc(pm.boundary)}` : ''}</div>` : ''}
+      ${val === 'fail' || ev ? `<input type="text" class="lev" data-lev="${esc(key)}" placeholder="evidence: quote the reply or tool result" value="${esc(ev)}" />` : ''}
+    </div>`;
+  }).join('');
+  const n = Object.keys(S.labDraft).filter(k => k.startsWith(tid + '|')).length;
+  return `<div class="lab" data-labpanel="${esc(tid)}"><div class="tag">labels · ${done} / ${modes.length} saved</div>${rows}
+    <div class="acts"><button class="btn primary small" data-labsave ${n ? '' : 'disabled'}>save ${n} change${n === 1 ? '' : 's'}</button>
+      <button class="btn small" data-labrest title="mark every mode without a label or draft as Pass; nothing is saved until you click save">unlabelled → Pass</button></div></div>`;
+}
+function wireLabPanel(el) {
+  const tid = el.dataset.labpanel;
+  const refresh = () => { const tmp = document.createElement('div'); tmp.innerHTML = renderLabPanel(tid);
+    const fresh = tmp.firstElementChild; el.replaceWith(fresh); wireLabPanel(fresh); };
+  const draft = key => { const [, m] = key.split('|'); const saved = (S.labels[m] || {})[tid];
+    return S.labDraft[key] || (S.labDraft[key] = {label: saved?.label, evidence: saved?.evidence || ''}); };
+  el.querySelectorAll('[data-lab]').forEach(b => b.onclick = () => {
+    const [, m, v] = b.dataset.lab.split('|'); draft(tid + '|' + m).label = v; refresh(); });
+  el.querySelectorAll('[data-def]').forEach(n => n.onclick = () => {
+    S.labDefOpen[n.dataset.def] = !S.labDefOpen[n.dataset.def]; refresh(); });
+  el.querySelectorAll('[data-lev]').forEach(i => i.oninput = () => { draft(i.dataset.lev).evidence = i.value; });
+  el.querySelector('[data-labrest]').onclick = () => {
+    labelModes().forEach(m => { if (!(S.labels[m] || {})[tid] && !S.labDraft[tid + '|' + m]) S.labDraft[tid + '|' + m] = {label: 'pass', evidence: ''}; });
+    refresh(); };
+  el.querySelector('[data-labsave]').onclick = async () => {
+    const keys = Object.keys(S.labDraft).filter(k => k.startsWith(tid + '|'));
+    const missing = keys.filter(k => S.labDraft[k].label === 'fail' && !S.labDraft[k].evidence.trim());
+    if (keys.some(k => !S.labDraft[k].label)) { toast('choose Fail or Pass for every edited mode'); return; }
+    if (missing.length) { toast('add evidence for each Fail: ' + missing.map(k => k.split('|')[1]).join(', ')); return; }
+    let synced = 0;
+    try {
+      for (const k of keys) {
+        const rec = await api.post('/api/labels', {trace_id: tid, mode: k.split('|')[1], label: S.labDraft[k].label, evidence: S.labDraft[k].evidence.trim()});
+        delete S.labDraft[k]; if (rec.langfuse_synced) synced++;
+      }
+    } catch (err) { toast('save failed: ' + err.message); }
+    await loadState(); refresh();
+    toast(`${synced} of ${keys.length} saved to Langfuse and locally`);
+  };
+}
+
+function renderMargin(tid) {
+  const anns = liveAnns(tid).map(a => {
+    const nf = a.kind === 'no_failure';
+    const hist = (a.history || []).length ? `<details><summary class="muted">edited ${a.history.length}× (earlier text kept)</summary>${a.history.map(h => `<div class="muted">${esc(h.note)}</div>`).join('')}</details>` : '';
+    return `<div class="note ${nf ? 'nofail' : ''} ${a.retracted ? 'retracted' : ''}" data-ann="${a.id}">
+      ${a.quote ? `<div class="quote">“${esc(clip(a.quote, 120))}”</div>` : ''}
+      <div class="body">${esc(a.note)}</div>${hist}
+      ${a.retracted ? '' : `<div class="acts"><button class="btn small" data-edit="${a.id}">edit</button><button class="btn small" data-retract="${a.id}">retract</button></div>`}
+    </div>`;
+  });
+  const sugg = S.suggestions.filter(x => x.trace_id === tid).map(x => {
+    const decided = x.status === 'accepted' || x.status === 'rejected';
+    return `<div class="note sugg" data-sugg="${esc(x.id)}">
+      <div class="tag">agent suggestion · ${esc(x.mode || '')}${decided ? ' · ' + esc(x.status) : ''}</div>
+      ${x.quote ? `<div class="quote">“${esc(clip(x.quote, 120))}”</div>` : ''}
+      <div class="body">${esc(x.rationale || '')}</div>
+      ${decided ? (x.decision_note ? `<div class="muted">your reason: ${esc(x.decision_note)}</div>` : '') : `
+        <textarea data-sreason="${esc(x.id)}" placeholder="your reason (required to reject; recommended to accept)"></textarea>
+        <div class="acts"><button class="btn good small" data-saccept="${esc(x.id)}">accept</button><button class="btn bad small" data-sreject="${esc(x.id)}">reject</button></div>`}
+    </div>`;
+  });
+  return anns.join('') + sugg.join('') || '<div class="empty">No notes on this turn yet.</div>';
+}
+
+function wireTurns(s) {
+  const root = document.getElementById('turns');
+  root.querySelectorAll('[data-labpanel]').forEach(wireLabPanel);
+  root.querySelectorAll('[data-act="note"]').forEach(b => b.onclick = e => openPopover(e, {trace_id: b.dataset.trace, quote: '', target: null}));
+  root.querySelectorAll('[data-act="nofail"]').forEach(b => b.onclick = () => saveAnnotation(s, b.dataset.trace,
+    {kind: 'no_failure', note: 'no failure observed', quote: '', target: null}));
+  root.querySelectorAll('[data-retract]').forEach(b => b.onclick = async () => {
+    const a = S.annotations.find(x => x.id === b.dataset.retract);
+    await api.post('/api/annotations', {...a, retracted: true}); await loadState(); renderReview(); toast('retracted (kept in history)');
+  });
+  root.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => {
+    const a = S.annotations.find(x => x.id === b.dataset.edit);
+    const card = b.closest('.note');
+    card.querySelector('.body').innerHTML = `<textarea>${esc(a.note)}</textarea><div class="acts"><button class="btn primary small" data-save>save</button></div>`;
+    const ta = card.querySelector('textarea'); ta.focus();
+    card.querySelector('[data-save]').onclick = async () => {
+      const note = ta.value.trim(); if (!note) return;
+      await api.post('/api/annotations', {...a, note}); await loadState(); renderReview(); toast('saved; earlier text kept');
+    };
+  });
+  const decide = (id, status) => async () => {
+    const note = (root.querySelector(`[data-sreason="${CSS.escape(id)}"]`)?.value || '').trim();
+    if (status === 'rejected' && !note) { toast('write the reason (the boundary that excludes it) before rejecting'); return; }
+    await api.post('/api/suggestions/decide', {id, status, note}); await loadState(); renderReview(); toast('suggestion ' + status);
+    const opt = document.querySelector('#scope option[value="pending"]'); if (opt) opt.textContent = pendingLabel();
+  };
+  root.querySelectorAll('[data-saccept]').forEach(b => b.onclick = decide(b.dataset.saccept, 'accepted'));
+  root.querySelectorAll('[data-sreject]').forEach(b => b.onclick = decide(b.dataset.sreject, 'rejected'));
+}
+
+/* Highlights work on character offsets into a target's textContent, so a
+   quote that crosses bold text, table cells, or line breaks is still wrapped:
+   each text node the span covers gets its own <span class="hl">. */
+function textOffset(root, node, offset) {
+  const r = document.createRange(); r.selectNodeContents(root); r.setEnd(node, offset);
+  return r.toString().length;
+}
+function wrapOffsets(root, start, end, cls, id) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const pieces = []; let pos = 0, node;
+  while ((node = walker.nextNode())) {
+    const len = node.nodeValue.length;
+    const s = Math.max(start, pos), e = Math.min(end, pos + len);
+    if (s < e) pieces.push([node, s - pos, e - pos]);
+    pos += len;
+    if (pos >= end) break;
+  }
+  pieces.forEach(([n, s, e]) => {
+    if (!n.nodeValue.slice(s, e).trim()) return;
+    const r = document.createRange(); r.setStart(n, s); r.setEnd(n, e);
+    const span = document.createElement('span'); span.className = cls; if (id) span.dataset.ann = id;
+    r.surroundContents(span);
+  });
+  return pieces.length > 0;
+}
+function locate(el, quote, start, end) {
+  const full = el.textContent;
+  if (start != null && end != null && full.slice(start, end) === quote) return [start, end];
+  const pos = full.indexOf(quote);
+  return pos >= 0 ? [pos, pos + quote.length] : null;
+}
+function highlight(el, item, cls) {
+  if (!el || !item.quote) return false;
+  const at = locate(el, item.quote, item.start, item.end);
+  return at ? wrapOffsets(el, at[0], at[1], cls, item.id) : false;
+}
+function applyHighlights(s) {
+  s.turns.forEach(t => {
+    const sec = document.querySelector(`.turn[data-trace="${t.trace_id}"]`);
+    liveAnns(t.trace_id).filter(a => a.quote && a.target && !a.retracted).forEach(a => {
+      if (!highlight(sec.querySelector(`[data-target="${a.target}"]`), a, 'hl'))
+        sec.querySelector(`.note[data-ann="${a.id}"] .quote`)?.insertAdjacentHTML('beforeend', ' <span class="muted">(text not found in trace)</span>');
+    });
+    S.suggestions.filter(x => x.trace_id === t.trace_id && x.quote && (x.status || 'pending') === 'pending').forEach(x =>
+      x.target ? highlight(sec.querySelector(`[data-target="${x.target}"]`), x, 'hl sg')
+               : [...sec.querySelectorAll('[data-target]')].some(el => highlight(el, x, 'hl sg')));
+  });
+  document.querySelectorAll('#turns .hl[data-ann]').forEach(h => h.onclick = () => focusAnn(h.dataset.ann));
+  document.querySelectorAll('#turns .note[data-ann]').forEach(c => c.addEventListener('click', e => {
+    if (!e.target.closest('button, textarea')) focusAnn(c.dataset.ann); }));
+}
+
+/* note popover: select text, or the "write note" button */
+let pop = null;
+document.getElementById('turns').addEventListener('mouseup', e => {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0).cloneRange();
+  const startEl = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+  const target = startEl?.closest('[data-target]');
+  const sec = startEl?.closest('.turn');
+  if (!target || !sec) return;
+  // A selection that runs past this block is clipped to it.
+  if (!target.contains(range.endContainer)) range.setEnd(target, target.childNodes.length);
+  const full = target.textContent;
+  let start = textOffset(target, range.startContainer, range.startOffset);
+  let end = textOffset(target, range.endContainer, range.endOffset);
+  const raw = full.slice(start, end);
+  start += raw.length - raw.trimStart().length;
+  end -= raw.length - raw.trimEnd().length;
+  if (end <= start) return;
+  openPopover(e, {trace_id: sec.dataset.trace, quote: full.slice(start, end), target: target.dataset.target, start, end});
+});
+function openPopover(e, ctx) {
+  pop = ctx;
+  const p = document.getElementById('popover');
+  document.getElementById('pop-quote').textContent = ctx.quote ? `“${clip(ctx.quote, 300)}”` : '(note on the whole turn)';
+  p.style.display = 'block';
+  p.style.left = Math.min(e.pageX, window.scrollX + innerWidth - 400) + 'px';
+  p.style.top = (e.pageY + 12) + 'px';
+  const ta = document.getElementById('pop-note'); ta.value = ''; setTimeout(() => ta.focus(), 0);
+}
+function closePopover() { pop = null; document.getElementById('popover').style.display = 'none'; }
+document.getElementById('pop-cancel').onclick = closePopover;
+document.getElementById('pop-save').onclick = commitPopover;
+document.getElementById('pop-note').onkeydown = e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitPopover(); }
+  if (e.key === 'Escape') closePopover();
+};
+async function commitPopover() {
+  const note = document.getElementById('pop-note').value.trim();
+  if (!note || !pop) { closePopover(); return; }
+  const s = S.list[S.cur]; const ctx = pop; closePopover();
+  await saveAnnotation(s, ctx.trace_id, {kind: 'note', note, quote: ctx.quote, target: ctx.target,
+    start: ctx.start ?? null, end: ctx.end ?? null});
+}
+async function saveAnnotation(s, tid, fields) {
+  const k = s.turns.findIndex(t => t.trace_id === tid);
+  try {
+    await api.post('/api/annotations', {
+      id: newId('a'), trace_id: tid, session_id: s.session_id, scenario_id: s.scenario_id,
+      turn: k + 1, batch: batchOf(tid), ...fields});
+    await loadState(); renderReview(); toast('saved');
+    window.getSelection()?.removeAllRanges();
+  } catch (err) { toast('save failed: ' + err.message); }
+}
+
+async function toggleAnswer(s) {
+  S.answerShown[s.session_id] = !S.answerShown[s.session_id];
+  renderReview();
+}
+async function showAnswer(s) {
+  const el = document.getElementById('answer');
+  try {
+    const a = await api.get('/api/answer_key?scenario=' + encodeURIComponent(s.scenario_id));
+    el.innerHTML = `<b>Answer key</b> <span class="muted">(scenario design from HW3; check it, do not defer to it)</span>
+      <pre class="json">${esc(pretty({expected: a.expected, design: a.design, data_quality_case_id: a.data_quality_case_id}))}</pre>`;
+    el.style.display = 'block';
+  } catch (err) { el.textContent = 'answer key unavailable: ' + err.message; el.style.display = 'block'; }
+}
+
+/* ------------------------------------------------------------- taxonomy */
+function annText(id) { const a = S.annotations.find(x => x.id === id); return a ? a : null; }
+function tlinks(ids) {
+  return (ids || []).map(id => { const h = byTrace[id];
+    return `<a class="tlink" data-goto="${esc(id)}">${esc(h ? h.session.scenario_id + ' t' + (h.turn + 1) : short(id))}</a>`; }).join(', ') || '<span class="empty">none yet</span>';
+}
+function renderTaxonomy() {
+  const el = document.getElementById('taxonomy-body');
+  const modes = S.patterns.modes || [];
+  if (!modes.length) { el.innerHTML = '<p class="empty">No modes yet. Modes appear here after axial coding (Part D), written to analysis/state/patterns.json.</p>'; return; }
+  el.innerHTML = modes.map(m => {
+    const rows = S.labels[m.name] || {};
+    const fails = Object.values(rows).filter(r => r.label === 'fail').length;
+    const passes = Object.values(rows).filter(r => r.label === 'pass').length;
+    const origin = (m.origin_annotation_ids || []).map(id => { const a = annText(id);
+      return a ? `<li>“${esc(a.note)}” — <a class="tlink" data-goto="${esc(a.trace_id)}">${esc(a.scenario_id)} t${a.turn}</a></li>` : `<li class="empty">${esc(id)} (missing)</li>`; }).join('');
+    const field = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
+    return `<div class="mode-card"><h3>${esc(m.name)} <span class="chip">${esc(m.status || 'candidate')}</span>
+        <span class="muted" style="font-family:inherit">labels: ${fails} fail · ${passes} pass</span></h3>
+      <dl>${field('definition', esc(m.definition))}${field('boundary', esc(m.boundary))}
+        ${field('nearest neighbour', esc(m.nearest_neighbor))}${field('requirement', esc(m.requirement))}
+        ${field('evaluator', esc(m.evaluator))}
+        <dt>positives</dt><dd>${tlinks(m.positive_trace_ids)}</dd>
+        <dt>close negatives</dt><dd>${tlinks(m.close_negative_trace_ids)}</dd>
+        <dt>origin annotations</dt><dd><ul style="margin:0;padding-left:18px">${origin || '<li class="empty">none linked</li>'}</ul></dd>
+        ${field('revisions', (m.revisions || []).map(r => esc(typeof r === 'string' ? r : JSON.stringify(r))).join('<br>'))}
+      </dl></div>`;
+  }).join('');
+  el.querySelectorAll('[data-goto]').forEach(a => a.onclick = () => gotoTrace(a.dataset.goto));
+}
+
+/* ---------------------------------------------------------------- label */
+const labelModes = () => (S.patterns.modes || []).filter(m => m.status !== 'dropped').map(m => m.name);
+function renderLabel() {
+  const el = document.getElementById('label-body');
+  const modes = labelModes();
+  const set = reviewSet();
+  if (!set.length) { el.innerHTML = '<p class="empty">The review set is empty. Batches are written to analysis/state/sample_manifest.json in Part B.</p>'; return; }
+  if (!modes.length) { el.innerHTML = '<p class="empty">No final modes yet (Part D). Labels need modes in analysis/state/patterns.json.</p>'; return; }
+  const code = tid => { const a = S.annotations.filter(x => x.trace_id === tid && !x.retracted)[0]; return a ? clip(a.note, 90) : '<span class="empty">no open code</span>'; };
+  el.innerHTML = `<p class="muted">Click a cell to record Fail (failure present) or Pass (absent). ✓ = written to Langfuse, ⚠ = local only.</p>
+    <table class="grid"><tr><th>trace</th><th>batch</th><th>open code</th>${modes.map(m => `<th class="mono mname" data-defh="${esc(m)}" title="click for the definition">${esc(m)} ▾</th>`).join('')}</tr>
+    ${set.map(t => { const h = byTrace[t.trace_id];
+      return `<tr><td><a class="tlink" data-goto="${esc(t.trace_id)}">${esc(h ? h.session.scenario_id + ' t' + (h.turn + 1) : short(t.trace_id))}</a></td>
+        <td>${esc(t.batch)}</td><td>${code(t.trace_id)}</td>
+        ${modes.map(m => { const r = (S.labels[m] || {})[t.trace_id];
+          const cls = r ? r.label : 'none'; const sel = S.labelSel && S.labelSel.trace_id === t.trace_id && S.labelSel.mode === m ? ' sel' : '';
+          return `<td class="cell ${cls}${sel}" data-cell="${esc(t.trace_id)}|${esc(m)}" title="${esc(r?.evidence || '')}">${r ? (r.label === 'fail' ? 'Fail' : 'Pass') + (r.langfuse_synced ? ' ✓' : ' ⚠') : '·'}</td>`; }).join('')}
+      </tr>`; }).join('')}</table>`;
+  el.querySelectorAll('[data-goto]').forEach(a => a.onclick = () => gotoTrace(a.dataset.goto));
+  el.querySelectorAll('[data-defh]').forEach(th => th.onclick = () => showDefPop(th, th.dataset.defh));
+  el.querySelectorAll('[data-cell]').forEach(c => c.onclick = () => { const [trace_id, mode] = c.dataset.cell.split('|'); S.labelSel = {trace_id, mode}; renderLabel(); renderLabelEditor(); });
+  renderLabelEditor();
+}
+/* Definition box under a grid column header; it stays until closed or another header is clicked. */
+function showDefPop(th, m) {
+  const pop = document.getElementById('defpop'); const pm = (S.patterns.modes || []).find(x => x.name === m) || {};
+  if (pop.style.display === 'block' && pop.dataset.mode === m) { pop.style.display = 'none'; return; }
+  pop.dataset.mode = m;
+  pop.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px"><b class="mono">${esc(m)}</b><button class="btn small" id="defpop-x">×</button></div>
+    <div><b>Definition.</b> ${esc(pm.definition || '')}</div>${pm.boundary ? `<div style="margin-top:4px"><b>Boundary.</b> ${esc(pm.boundary)}</div>` : ''}`;
+  const r = th.getBoundingClientRect();
+  pop.style.top = (r.bottom + 4) + 'px';
+  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - 440)) + 'px';
+  pop.style.display = 'block';
+  document.getElementById('defpop-x').onclick = () => { pop.style.display = 'none'; };
+}
+function renderLabelEditor() {
+  const ed = document.getElementById('label-editor');
+  if (!S.labelSel) { ed.style.display = 'none'; return; }
+  const {trace_id, mode} = S.labelSel; const h = byTrace[trace_id];
+  const r = (S.labels[mode] || {})[trace_id]; const def = (S.patterns.modes || []).find(m => m.name === mode);
+  ed.style.display = 'block';
+  ed.innerHTML = `<div><b class="mono">${esc(mode)}</b> on <b>${esc(h ? h.session.scenario_id + ' turn ' + (h.turn + 1) : trace_id)}</b>
+      <a class="tlink" data-goto="${esc(trace_id)}">open trace</a></div>
+    <div class="muted">${esc(def?.definition || '')}</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:6px;flex-wrap:wrap">
+      <label><input type="radio" name="lv" value="fail" ${r?.label === 'fail' ? 'checked' : ''}/> Fail (present)</label>
+      <label><input type="radio" name="lv" value="pass" ${r?.label === 'pass' ? 'checked' : ''}/> Pass (absent)</label>
+      <input type="text" id="lev" placeholder="evidence: quote the tool result or reply" style="flex:1;min-width:260px" value="${esc(r?.evidence || '')}" />
+      <button class="btn primary small" id="lsave">save judgment</button><button class="btn small" id="lclose">close</button>
+    </div>`;
+  ed.querySelector('[data-goto]').onclick = () => gotoTrace(trace_id);
+  ed.querySelector('#lclose').onclick = () => { S.labelSel = null; renderLabel(); };
+  ed.querySelector('#lsave').onclick = async () => {
+    const v = ed.querySelector('input[name=lv]:checked')?.value; if (!v) { toast('choose Fail or Pass'); return; }
+    try {
+      const rec = await api.post('/api/labels', {trace_id, mode, label: v, evidence: ed.querySelector('#lev').value.trim()});
+      await loadState(); renderLabel(); toast(rec.langfuse_synced ? 'saved to Langfuse and locally' : 'saved locally only' + (rec.langfuse_error ? ': ' + rec.langfuse_error : ''));
+    } catch (err) { toast('save failed: ' + err.message); }
+  };
+}
+
+/* ------------------------------------------------------------- progress */
+function renderProgress() {
+  const el = document.getElementById('progress-body');
+  const set = reviewSet(); const ids = new Set(set.map(t => t.trace_id));
+  const live = S.annotations.filter(a => !a.retracted);
+  const notes = live.filter(a => a.kind === 'note').length, nofail = live.filter(a => a.kind === 'no_failure').length;
+  const judgedIds = new Set(live.map(a => a.trace_id));
+  const offSet = [...judgedIds].filter(t => !ids.has(t)).length;
+  const modes = labelModes();
+  const sug = s => S.suggestions.filter(x => (x.status || 'pending') === s).length;
+  const dup = set.length - ids.size;
+  let html = `<div class="stats">
+    <div class="stat"><b>${ids.size}</b>distinct traces in review set (target ≥ 100)</div>
+    <div class="stat"><b>${[...ids].filter(t => judgedIds.has(t)).length}</b>judged</div>
+    <div class="stat"><b>${notes}</b>failure notes</div>
+    <div class="stat"><b>${nofail}</b>no failure observed</div>
+    <div class="stat"><b>${sug('pending')} / ${sug('accepted')} / ${sug('rejected')}</b>suggestions pending / accepted / rejected</div>
+  </div>`;
+  if (dup) html += `<p class="chip err">${dup} trace(s) appear in more than one batch; each trace may count toward one batch only.</p>`;
+  if (offSet) html += `<p class="muted">${offSet} judged trace(s) are outside the review set (e.g. browsing in "All sessions").</p>`;
+  html += `<h3>Batches</h3><table class="grid"><tr><th>batch</th><th>method</th><th>traces</th><th>judged</th><th>not judged yet</th></tr>` +
+    ((S.manifest.batches || []).map(b => { const ts = b.traces || []; const open = ts.filter(t => !judgedIds.has(t.trace_id));
+      return `<tr><td>${esc(b.name)}</td><td>${esc(b.method || '')}</td><td>${ts.length}</td><td>${ts.length - open.length}</td>
+        <td>${open.map(t => `<a class="tlink" data-goto="${esc(t.trace_id)}">${esc(byTrace[t.trace_id]?.session.scenario_id || short(t.trace_id))}</a>`).join(', ') || '✓'}</td></tr>`; }).join('')
+      || '<tr><td colspan="5" class="empty">no batches yet</td></tr>') + '</table>';
+  if (modes.length && set.length) {
+    html += `<h3>Structured labels</h3><table class="grid"><tr><th>mode</th><th>filled</th><th>fail</th><th>pass</th><th>sample fraction (fail / labeled)</th><th>not synced to Langfuse</th><th>missing</th></tr>` +
+      modes.map(m => { const rows = S.labels[m] || {}; const got = [...ids].filter(t => rows[t]);
+        const f = got.filter(t => rows[t].label === 'fail').length; const miss = [...ids].filter(t => !rows[t]);
+        const uns = got.filter(t => !rows[t].langfuse_synced).length;
+        return `<tr><td class="mono">${esc(m)}</td><td>${got.length} / ${ids.size}</td><td>${f}</td><td>${got.length - f}</td>
+          <td>${got.length ? (f / got.length).toFixed(2) : '–'}</td><td>${uns}</td><td>${miss.length}</td></tr>`; }).join('') + '</table>';
+  }
+  const q = (S.noteFilter || '').toLowerCase();
+  const all = [...S.annotations].sort((a, b) => (a.created || a.ts || '').localeCompare(b.created || b.ts || ''))
+    .filter(a => !q || [a.note, a.quote, a.scenario_id, a.batch, a.kind].join(' ').toLowerCase().includes(q));
+  html += `<h3>All notes (${S.annotations.length})</h3>
+    <p class="muted">Every open code, oldest first, including retracted ones (struck through). Use this list for axial coding in Part D.</p>
+    <input type="text" id="note-filter" placeholder="filter notes, e.g. refund or final-0039" style="width:340px;margin-bottom:8px" value="${esc(S.noteFilter || '')}" />
+    <table class="grid"><tr><th>trace</th><th>batch</th><th>kind</th><th>note</th><th>quoted evidence</th><th>edits</th><th>created</th></tr>` +
+    (all.map(a => `<tr style="${a.retracted ? 'opacity:.5;text-decoration:line-through' : ''}">
+      <td><a class="tlink" data-goto="${esc(a.trace_id)}" data-ann-go="${esc(a.id)}">${esc(a.scenario_id || short(a.trace_id))} t${esc(a.turn)}</a></td>
+      <td>${esc(a.batch || '–')}</td><td>${a.kind === 'no_failure' ? 'no failure' : 'note'}</td>
+      <td>${esc(a.note)}</td><td class="muted">${esc(clip(a.quote, 120))}</td>
+      <td>${(a.history || []).length || ''}</td><td class="muted">${esc((a.created || a.ts || '').slice(0, 16).replace('T', ' '))}</td></tr>`).join('')
+      || '<tr><td colspan="7" class="empty">no notes match</td></tr>') + '</table>';
+  el.innerHTML = html;
+  el.querySelectorAll('[data-goto]').forEach(a => a.onclick = () => {
+    gotoTrace(a.dataset.goto);
+    if (a.dataset.annGo) setTimeout(() => focusAnn(a.dataset.annGo), 120);
+  });
+  const nf = document.getElementById('note-filter');
+  nf.oninput = () => { S.noteFilter = nf.value; renderProgress();
+    const again = document.getElementById('note-filter'); again.focus(); again.setSelectionRange(again.value.length, again.value.length); };
+}
+
+/* ----------------------------------------------------------------- spec */
+function renderSpec() {
+  const q = document.getElementById('spec-filter').value.trim().toLowerCase();
+  const sp = S.spec; if (!sp) return;
+  const hit = s => !q || s.toLowerCase().includes(q);
+  const reqs = sp.requirements.filter(r => hit(r.id + ' ' + r.text)).map(r => `<div class="req"><b>${esc(r.id)}</b> ${md(r.text)}</div>`).join('');
+  const tools = sp.tools.filter(t => hit(t.id + ' ' + t.name + ' ' + t.cells.join(' '))).map(t =>
+    `<div class="req"><b>${esc(t.id)}</b> <code>${esc(t.name)}</code> <span class="muted">${esc(t.cells.join(' · '))}</span></div>`).join('');
+  const facts = Object.entries(sp.facts).filter(([k, v]) => hit(k + ' ' + v)).map(([k, v]) => `<div class="req"><code>${esc(k)}</code>: <b>${esc(v)}</b></div>`).join('');
+  document.getElementById('spec-body').innerHTML = `<h4>Requirements</h4>${reqs || '<p class="empty">no match</p>'}
+    <h4>Tools</h4>${tools || '<p class="empty">no match</p>'}<h4>facts.yaml</h4>${facts || '<p class="empty">no match</p>'}
+    <p class="muted">The tool success and failure contracts are in SPEC.md §4.</p>`;
+}
+document.getElementById('spec-filter').oninput = renderSpec;
+document.getElementById('spec-toggle').onclick = () => document.getElementById('spec').classList.toggle('open');
+document.getElementById('spec-close').onclick = () => document.getElementById('spec').classList.remove('open');
+
+boot().catch(err => { document.getElementById('s-head').innerHTML = `<p class="chip err">failed to load: ${esc(err.message)}</p>`; });
+</script>
+</body>
+</html>
