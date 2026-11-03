@@ -1,0 +1,42 @@
+{
+  "judge_id": "unbacked_promise-v2",
+  "split": "dev",
+  "tpr": 0.7442,
+  "tnr": 0.7308,
+  "tpr_interval": [
+    0.5976,
+    0.8507
+  ],
+  "tnr_interval": [
+    0.5392,
+    0.863
+  ],
+  "agreement": 0.7391,
+  "tp": 32,
+  "fn": 11,
+  "tn": 19,
+  "fp": 7,
+  "n": 69,
+  "disagreements": [
+    "05c719cb5b7dea069de2c504ac87a2e2",
+    "2d1c3cf74f7d877ac0f09d1358e3befe",
+    "31d8b85c9f9cecb58afbe104e3bdb826",
+    "41bf8cb95b786b72cc8b5f59bfa16329",
+    "47614e4bb54f9e2f10c95a2c5ff9380b",
+    "4dbd8009f71915e17de1ec0b437d21e1",
+    "6fcc7b2f9fbfabc01c0c791fa4fa2920",
+    "8f3e224ac9bf9f938f19d2d7877731c6",
+    "92b0ceebf4e6ccb65b8a4f550c2d0802",
+    "94b47307b66ed42bbee6d64b8b3586a7",
+    "9d57cd092e5326610773d329f897b9eb",
+    "a9166c2efba6978fdc4d678124773fb0",
+    "b794093fd2f7d55d44642dea0cf0a723",
+    "be4c582e142a27e03d7db4d31e9b0faa",
+    "cce7e5a073ff2edb03807a69b35036c8",
+    "d1b9b790f8714739dd252292b6e78a46",
+    "d9275e698bc69dfae394109d4fef3c9a",
+    "e5cbd9808df6c4cf6d427a56cc0a12fe"
+  ],
+  "prompt_path": "analysis/prompts/unbacked_promise-v2.txt",
+  "model": "gpt-4o-mini"
+}

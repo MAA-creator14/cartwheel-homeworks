@@ -27,6 +27,8 @@ API:
     POST /api/labels              {trace_id, mode, label: fail|pass, evidence, note}
     GET  /api/spec                requirement ids from SPEC.md, facts.yaml threshold
     GET  /api/answer_key?scenario=final-0001
+    GET  /api/judge_dev           newest judge verdict and critique, dev split only
+    GET  /api/recheck             trace ids for the blind label recheck
 
 Run from the repository root:
 
@@ -55,6 +57,9 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
 STATE_DIR = REPO_ROOT / "analysis" / "state"
 LABELS_DIR = STATE_DIR / "labels"
+HW5_LABELS_DIR = STATE_DIR / "hw5_labels"
+JUDGES_DIR = STATE_DIR / "judges"
+SPLITS_PATH = STATE_DIR / "splits.json"
 SCENARIOS_PATH = REPO_ROOT / "scenarios" / "support_scenarios.jsonl"
 
 FILES = {
@@ -62,12 +67,14 @@ FILES = {
     "manifest": STATE_DIR / "sample_manifest.json",
     "patterns": STATE_DIR / "patterns.json",
     "suggestions": STATE_DIR / "suggestions.json",
+    "recheck": STATE_DIR / "hw5_recheck.json",
 }
 DEFAULTS: dict[str, Any] = {
     "annotations": {"annotations": []},
     "manifest": {"batches": []},
     "patterns": {"modes": []},
     "suggestions": [],
+    "recheck": [],
 }
 
 MODE_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -255,6 +262,41 @@ def spec_reference() -> dict[str, Any]:
     }
 
 
+def judge_dev() -> dict[str, dict[str, Any]]:
+    """Return the newest judge verdict and critique per development trace.
+
+    Reads the development split only, so a test prediction can never reach
+    the interface while a prompt is still being chosen.
+    """
+    if not SPLITS_PATH.exists():
+        return {}
+    splits = json.loads(SPLITS_PATH.read_text(encoding="utf-8"))
+    review: dict[str, dict[str, Any]] = {}
+    for mode, split in splits.items():
+        history_path = JUDGES_DIR / f"_history_{mode}.json"
+        if not (HW5_LABELS_DIR / f"{mode}.jsonl").exists() or not history_path.exists():
+            continue
+        dev_ids = split.get("dev", [])
+        versions = json.loads(history_path.read_text(encoding="utf-8"))["versions"]
+        for version in reversed(versions):
+            judge_path = JUDGES_DIR / f"{version['judge_id']}.json"
+            judge = json.loads(judge_path.read_text(encoding="utf-8"))
+            predictions = judge.get("predictions", {}).get(judge["prompt_hash"], {})
+            if not any(trace_id in predictions for trace_id in dev_ids):
+                continue
+            critiques = judge.get("critiques", {}).get(judge["prompt_hash"], {})
+            for trace_id in dev_ids:
+                if trace_id in predictions:
+                    review[trace_id] = {
+                        "mode": mode,
+                        "judge_id": judge["judge_id"],
+                        "verdict": "pass" if predictions[trace_id] == 1 else "fail",
+                        "critique": critiques.get(trace_id, ""),
+                    }
+            break
+    return review
+
+
 def answer_key(scenario_id: str) -> dict[str, Any]:
     for line in SCENARIOS_PATH.read_text(encoding="utf-8").splitlines():
         if line.strip():
@@ -312,6 +354,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(read_json(url.path.removeprefix("/api/")))
             elif url.path == "/api/labels":
                 self._json(latest_labels())
+            elif url.path == "/api/judge_dev":
+                self._json(judge_dev())
             elif url.path == "/api/spec":
                 self._json(spec_reference())
             elif url.path == "/api/answer_key":
