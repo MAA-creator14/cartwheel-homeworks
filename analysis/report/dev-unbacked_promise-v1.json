@@ -1,0 +1,46 @@
+{
+  "judge_id": "unbacked_promise-v1",
+  "split": "dev",
+  "tpr": 0.5116,
+  "tnr": 0.9615,
+  "tpr_interval": [
+    0.3675,
+    0.6538
+  ],
+  "tnr_interval": [
+    0.8111,
+    0.9932
+  ],
+  "agreement": 0.6812,
+  "tp": 22,
+  "fn": 21,
+  "tn": 25,
+  "fp": 1,
+  "n": 69,
+  "disagreements": [
+    "1285ca394eba00a884016b53bc8df4b0",
+    "1612697cf1fb5e7d80b911849e00854e",
+    "1619547595bf5aecd522e2e935bac6fe",
+    "2a161d6efcb0a4f7df1b2ea8442b6c1e",
+    "2d1c3cf74f7d877ac0f09d1358e3befe",
+    "33b97d4912d47626c5b87714cd89cbf8",
+    "7b001d3c624f44fd84bdb87cff28ced1",
+    "7fd3ebff739dbed9bceecf647928f013",
+    "8f3e224ac9bf9f938f19d2d7877731c6",
+    "94b47307b66ed42bbee6d64b8b3586a7",
+    "9638757a35e407a4864d3db3700fba3a",
+    "97e75a3719d11dfe6dce090ad08c0d9a",
+    "9d57cd092e5326610773d329f897b9eb",
+    "addd4158367c43c6694c048693f748cf",
+    "b409c67e93a0f1ced261ca875dea6fd4",
+    "b794093fd2f7d55d44642dea0cf0a723",
+    "cce7e5a073ff2edb03807a69b35036c8",
+    "d1b9b790f8714739dd252292b6e78a46",
+    "d9275e698bc69dfae394109d4fef3c9a",
+    "e0fc02130adb9d6db7a14afa11ff3293",
+    "e5cbd9808df6c4cf6d427a56cc0a12fe",
+    "ef276e894b4488378d6ab2392ac18b31"
+  ],
+  "prompt_path": "analysis/prompts/unbacked_promise-v1.txt",
+  "model": "gpt-4o-mini"
+}

@@ -1,0 +1,16 @@
+{
+  "versions": [
+    {
+      "judge_id": "unbacked_promise-v0",
+      "prompt_hash": "a0bbdae95789"
+    },
+    {
+      "judge_id": "unbacked_promise-v1",
+      "prompt_hash": "1559e6bbb857"
+    },
+    {
+      "judge_id": "unbacked_promise-v2",
+      "prompt_hash": "013857d4e8c8"
+    }
+  ]
+}

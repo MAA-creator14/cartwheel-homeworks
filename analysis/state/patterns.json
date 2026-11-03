@@ -4,8 +4,8 @@
       "id": "unbacked_promise",
       "name": "unbacked_promise",
       "status": "candidate",
-      "definition": "The reply tells the user what will happen next, or what a human will do, and neither a policy nor a tool result supports it.",
-      "boundary": "The route is right, but the reply promises an outcome nothing guarantees (e.g. 'will approve'). If the route itself is wrong, label wrong_resolution_route instead.",
+      "definition": "The final reply tells the user what will happen next, or what a human will do or can do, in a way that goes beyond the tool results and policies in the trace.",
+      "boundary": "Fail: stating that a human will approve (a tool result saying a human will review is not approval); vague timing for a human or system with no source ('shortly', 'soon'); saying a human can grant an exception when no policy provides one; the agent offering an action that is not one of its tools in SPEC.md, such as placing an order or changing account details. Pass: a follow-up within 24 hours after escalate_to_human returns sla_hours; timing stated by a tool result or policy; the agent's own next action, or an offer of one, when it is one of its tools in SPEC.md, including an offer to escalate that names no exception. Wrong routes, omissions, missing citations and statements about the present are other modes, not this one. A wrong route is wrong_resolution_route.",
       "requirement": "RESP-3 (do not invent), RESP-1 (policy-backed claims)",
       "evaluator": "llm_judge",
       "nearest_neighbor": "wrong_resolution_route",
@@ -40,7 +40,12 @@
         "2026-10-24 axial round 2 (after batch2): student added final-0222 T1 (refund queued; reply says human will review and approve)",
         "2026-10-24 axial round 3 (after batch3): student accepted positives 0051 T1, 0006 T2, 0225 T1 (exception offer, student chose this over wrong_resolution_route)",
         "2026-10-24 Part D draft taxonomy: student approved boundary, nearest neighbour, evaluator type, and close negatives (drafted by agent)",
-        "2026-10-25 Part E labelling: student relabelled final-0224 T1 as Fail, so it moved from close negative to positive (moved by agent)"
+        "2026-10-25 Part E labelling: student relabelled final-0224 T1 as Fail, so it moved from close negative to positive (moved by agent)",
+        "2026-10-31 HW5 boundary check: student agreed five rules (stated approval, vague timing, 24-hour SLA, agent's own action, exception authority). Definition and boundary wording drafted by agent",
+        "2026-11-01 HW5 dev review: student chose the tool-list rule for offers (option A). Boundary wording drafted by agent"
+      ],
+      "previous_definitions": [
+        "The reply tells the user what will happen next, or what a human will do, and neither a policy nor a tool result supports it."
       ]
     },
     {

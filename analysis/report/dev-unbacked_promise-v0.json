@@ -1,0 +1,52 @@
+{
+  "judge_id": "unbacked_promise-v0",
+  "split": "dev",
+  "tpr": 0.4468,
+  "tnr": 0.9091,
+  "tpr_interval": [
+    0.3141,
+    0.5875
+  ],
+  "tnr_interval": [
+    0.7218,
+    0.9747
+  ],
+  "agreement": 0.5942,
+  "tp": 21,
+  "fn": 26,
+  "tn": 20,
+  "fp": 2,
+  "n": 69,
+  "disagreements": [
+    "1285ca394eba00a884016b53bc8df4b0",
+    "1612697cf1fb5e7d80b911849e00854e",
+    "31d8b85c9f9cecb58afbe104e3bdb826",
+    "33b97d4912d47626c5b87714cd89cbf8",
+    "41bf8cb95b786b72cc8b5f59bfa16329",
+    "47614e4bb54f9e2f10c95a2c5ff9380b",
+    "4b9eeac102f419da7cd55b87afa7d1a2",
+    "536ebae2e75a9ce39d55f5a5657591d6",
+    "6fcc7b2f9fbfabc01c0c791fa4fa2920",
+    "7b001d3c624f44fd84bdb87cff28ced1",
+    "891cd38eb87acad59558cd5e3f95f378",
+    "8f3e224ac9bf9f938f19d2d7877731c6",
+    "92b0ceebf4e6ccb65b8a4f550c2d0802",
+    "94b47307b66ed42bbee6d64b8b3586a7",
+    "9638757a35e407a4864d3db3700fba3a",
+    "a0eb46a83f9063366896189e59390f05",
+    "a5b0d7370cfbb8bebcc9607f68a5c995",
+    "addd4158367c43c6694c048693f748cf",
+    "b409c67e93a0f1ced261ca875dea6fd4",
+    "b6f8b52f8679a328c958defec0a09188",
+    "cce7e5a073ff2edb03807a69b35036c8",
+    "d0ed85c1a6f38b6d2fdaa2e56ecc97bb",
+    "d1b9b790f8714739dd252292b6e78a46",
+    "e0fc02130adb9d6db7a14afa11ff3293",
+    "e95f95e82f3c33d718fc32181ccc419d",
+    "ef276e894b4488378d6ab2392ac18b31",
+    "f28fb4ce5d48701159dc98f2694035c1",
+    "fcd185cdba876b82a4254fd704f5651b"
+  ],
+  "prompt_path": "analysis/prompts/unbacked_promise-v0.txt",
+  "model": "gpt-4o-mini"
+}

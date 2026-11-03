@@ -24,6 +24,12 @@ the status line in the header shows which source is in use.
 | Label | One Fail/Pass per trace and mode, with evidence | Langfuse score (1 = failure present) and `analysis/state/labels/<mode>.jsonl` |
 | Progress | Review-set size, judged and unjudged traces per batch, label completeness, sample fractions, suggestion decisions | Reads all of the above |
 
+For HW5, the scope menu adds "Judge disagreements, dev" and "Judge dev traces". Each of
+those turns shows the newest judge verdict and critique beside your label. The server
+reads the development split only, so test predictions never appear here. The "Blind
+recheck" scope lists the trace ids in `analysis/state/hw5_recheck.json` and hides the
+judge panel.
+
 Batches come from `analysis/state/sample_manifest.json`, and agent suggestions from
 `analysis/state/suggestions.json`. When you edit a note, its earlier text is kept in
 `history`. A retracted note stays in the file with `retracted: true`. Accepted and

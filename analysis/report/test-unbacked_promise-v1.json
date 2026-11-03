@@ -1,0 +1,63 @@
+{
+  "judge_id": "unbacked_promise-v1",
+  "split": "test",
+  "tpr": 0.3793,
+  "tnr": 1.0,
+  "tpr_interval": [
+    0.2656,
+    0.508
+  ],
+  "tnr_interval": [
+    0.7412,
+    1.0
+  ],
+  "agreement": 0.4783,
+  "tp": 22,
+  "fn": 36,
+  "tn": 11,
+  "fp": 0,
+  "n": 69,
+  "disagreements": [
+    "138699b0fa88cac31daac78595961014",
+    "148c1d56839e1269d1cb7eb24d63a21d",
+    "14af3b0a467faee033fa51e12939538b",
+    "17f6212d8643652d77776d40f7c5dd89",
+    "1ac5ce0fc9e5517a2488aa09efead565",
+    "1f5757b9d0c8c42b6b051bb956e27ce2",
+    "2a43b17de8565c88475e0fb5aac5b058",
+    "363cb167dfb1ac1f69d3eb6ffeacd048",
+    "36a744561adc16045c019b8a84b71276",
+    "3b2953f67bdb5e89777d8684ef57ea27",
+    "3d3521d60b08b09f76ac7c9fe2964898",
+    "4320008be76cc1e40af38d1bd2053144",
+    "4cdd39f1dcf250085450f6e64b35e4e1",
+    "5543b0d5e599f4f1ac4f5f2063ddc30f",
+    "5e3318291d4bfc2a9adf874800873db2",
+    "60b7c34acb66df527c15c7007cc27604",
+    "65490a811b228c5564449f484547d014",
+    "67b56f1c163254f57da91674bd6a663e",
+    "6bda93d8df41441c61f11b3082d90aaf",
+    "71ca654b54d0347e888097355229c57d",
+    "77394f65cc726f4f0efa9c06b1b4e47b",
+    "7880d051f04bb00db3ce86d37aacc375",
+    "822e64aca8bf637c9ab9ab3e5276ed35",
+    "8cc4be35c962d3956cb66a7be454a117",
+    "8d2a5083a00d684c66b7fdbabd3fd197",
+    "96d40f3c73bf1380230049d4954a0511",
+    "a078d1cce808138d467ca348c818dcd3",
+    "ab05eaf7f8f6428a5de355e10257fab1",
+    "afeb24ec2d83bffe0e0c149b6931fb4f",
+    "b1d0a5d729d5a7680c50150206955e22",
+    "b8326fe90e400485a8331bbff0e047ba",
+    "c268a4fe9867edca98f76cb1b256520a",
+    "d729bca539af6f00763086be965a047d",
+    "ea821853c77ce7ec11e471188a9aab81",
+    "f1ee96f161a7aedbba1163383596c9ff",
+    "f31301d2feba247c2d77a6a46e698cb6"
+  ],
+  "class_counts": {
+    "pass": 58,
+    "fail": 11
+  },
+  "model": "gpt-4o-mini"
+}

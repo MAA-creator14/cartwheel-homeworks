@@ -134,3 +134,45 @@ def test_spec_reference_lists_requirements_and_threshold() -> None:
     assert {"AUTH-1", "ESC-1", "RESP-2"} <= ids
     assert ref["facts"]["refund_auto_approve_threshold_usd"] == 100
     assert len(ref["tools"]) == 9
+
+
+def test_judge_dev_returns_newest_dev_predictions_only(tmp_path, monkeypatch) -> None:
+    judges = tmp_path / "judges"
+    hw5 = tmp_path / "hw5_labels"
+    judges.mkdir()
+    hw5.mkdir()
+    (hw5 / "m.jsonl").write_text("")
+    splits = tmp_path / "splits.json"
+    splits.write_text(json.dumps({"m": {"dev": ["d1", "d2"], "test": ["t1"]}}))
+    (judges / "_history_m.json").write_text(
+        json.dumps({"versions": [{"judge_id": "m-v0"}, {"judge_id": "m-v1"}, {"judge_id": "m-v2"}]})
+    )
+    for version, predictions in (
+        ("m-v0", {"d1": 0, "d2": 0}),
+        ("m-v1", {"d1": 1, "d2": 0, "t1": 1}),
+        ("m-v2", {}),
+    ):
+        (judges / f"{version}.json").write_text(
+            json.dumps(
+                {
+                    "judge_id": version,
+                    "prompt_hash": "h",
+                    "predictions": {"h": predictions},
+                    "critiques": {"h": {"d1": "because", "t1": "hidden"}},
+                }
+            )
+        )
+    monkeypatch.setattr(server, "JUDGES_DIR", judges)
+    monkeypatch.setattr(server, "HW5_LABELS_DIR", hw5)
+    monkeypatch.setattr(server, "SPLITS_PATH", splits)
+
+    review = server.judge_dev()
+
+    assert set(review) == {"d1", "d2"}
+    assert review["d1"] == {
+        "mode": "m",
+        "judge_id": "m-v1",
+        "verdict": "pass",
+        "critique": "because",
+    }
+    assert review["d2"]["verdict"] == "fail"

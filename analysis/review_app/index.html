@@ -298,11 +298,12 @@ function reviewSet() {
 
 /* ------------------------------------------------------------- loading */
 async function loadState() {
-  const [ann, man, pat, sug, lab] = await Promise.all([
+  const [ann, man, pat, sug, lab, jd, rc] = await Promise.all([
     api.get('/api/annotations'), api.get('/api/manifest'), api.get('/api/patterns'),
-    api.get('/api/suggestions'), api.get('/api/labels')]);
-  const sig = JSON.stringify([ann, man, pat, sug, lab]);
+    api.get('/api/suggestions'), api.get('/api/labels'), api.get('/api/judge_dev'), api.get('/api/recheck')]);
+  const sig = JSON.stringify([ann, man, pat, sug, lab, jd, rc]);
   const changed = sig !== S._sig; S._sig = sig;
+  S.judge = jd || {}; S.recheck = Array.isArray(rc) ? rc : [];
   S.annotations = ann.annotations || []; S.manifest = man.batches ? man : {batches: []};
   S.patterns = pat.modes ? pat : {modes: []}; S.suggestions = Array.isArray(sug) ? sug : []; S.labels = lab || {};
   return changed;
@@ -345,6 +346,12 @@ function buildScope(keep) {
   opts.push(['unjudged', 'Review set: unjudged']);
   opts.push(['pending', pendingLabel()]);
   opts.push(['unlabelled', 'Review set: labels incomplete']);
+  if (S.recheck.length) opts.push(['judge_recheck', `Blind recheck, judge hidden (${S.recheck.length})`]);
+  const jt = judgeTraces();
+  if (jt.length) {
+    opts.push(['judge_disagree', `Judge disagreements, dev (${jt.filter(judgeDisagrees).length})`]);
+    opts.push(['judge_dev', `Judge dev traces (${jt.length})`]);
+  }
   sel.innerHTML = opts.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
   S.scope = opts.some(o => o[0] === prev) ? prev : 'all';
   sel.value = S.scope;
@@ -357,6 +364,9 @@ const pendingLabel = () => {
   const p = pendingSuggestions();
   return `Pending suggestions (${p.length} in ${new Set(p.map(x => byTrace[x.trace_id]?.session.session_id)).size} sessions)`;
 };
+const judgeTraces = () => Object.keys(S.judge || {});
+const judgeHuman = tid => (S.labels[S.judge[tid].mode] || {})[tid]?.label;
+const judgeDisagrees = tid => judgeHuman(tid) !== S.judge[tid].verdict;
 function computeList(keep) {
   const curId = S.list[S.cur]?.session_id;
   let ids;
@@ -365,6 +375,9 @@ function computeList(keep) {
     const traces = S.scope === 'unjudged' ? reviewSet().filter(t => !judged(t.trace_id))
       : S.scope === 'pending' ? pendingSuggestions()
       : S.scope === 'unlabelled' ? reviewSet().filter(t => labelModes().some(m => !(S.labels[m] || {})[t.trace_id]))
+      : S.scope === 'judge_recheck' ? S.recheck.map(trace_id => ({trace_id}))
+      : S.scope === 'judge_dev' ? judgeTraces().map(trace_id => ({trace_id}))
+      : S.scope === 'judge_disagree' ? judgeTraces().filter(judgeDisagrees).map(trace_id => ({trace_id}))
       : ((S.manifest.batches || []).find(b => b.name === S.scope)?.traces || []);
     ids = [...new Set(traces.map(t => byTrace[t.trace_id]?.session.session_id).filter(Boolean))];
   }
@@ -516,7 +529,7 @@ function renderTurn(s, t, k) {
           <span class="muted">or select text in this turn to attach a note to it</span>
         </div>
       </div>
-      <div class="margin">${renderLabPanel(t.trace_id)}${renderMargin(t.trace_id)}</div>
+      <div class="margin">${renderJudgePanel(t.trace_id)}${renderLabPanel(t.trace_id)}${renderMargin(t.trace_id)}</div>
     </div>
   </section>`;
 }
@@ -554,10 +567,29 @@ function renderResult(st, withRaw) {
 
 /* Part E: one Pass/Fail per final mode for a review-set trace. Clicks only
    change a draft; nothing is written until "save", which posts each change
-   to /api/labels (local file + Langfuse score). */
+   to /api/labels (local file + Langfuse score). A trace outside the review
+   set takes labels only for the modes it was suggested for (HW5 candidates). */
+function labPanelModes(tid) {
+  if (batchOf(tid)) return labelModes();
+  const suggested = S.suggestions.filter(x => x.trace_id === tid).map(x => x.mode);
+  if (S.judge?.[tid]) suggested.push(S.judge[tid].mode);
+  if (S.recheck.includes(tid)) suggested.push('unbacked_promise');
+  return labelModes().filter(m => suggested.includes(m));
+}
+/* HW5 development review: the judge verdict and critique beside the human label. */
+function renderJudgePanel(tid) {
+  const j = S.judge?.[tid];
+  if (!j || S.scope === 'judge_recheck') return '';
+  const name = v => v === 'pass' ? 'Pass' : v === 'fail' ? 'Fail' : 'no label';
+  const human = judgeHuman(tid);
+  return `<div class="lab"><div class="tag">judge · ${esc(j.judge_id)}</div>
+    <div>Judge <b>${name(j.verdict)}</b> · Human <b>${name(human)}</b>
+      ${human === j.verdict ? '<span class="chip okc">agree</span>' : '<span class="chip err">disagree</span>'}</div>
+    <div class="ldef" style="white-space:pre-wrap">${esc(j.critique)}</div></div>`;
+}
 function renderLabPanel(tid) {
-  const modes = labelModes();
-  if (!batchOf(tid) || !modes.length) return '';
+  const modes = labPanelModes(tid);
+  if (!modes.length) return '';
   const done = modes.filter(m => (S.labels[m] || {})[tid]).length;
   const rows = modes.map(m => {
     const key = tid + '|' + m, saved = (S.labels[m] || {})[tid], d = S.labDraft[key];
@@ -587,7 +619,7 @@ function wireLabPanel(el) {
     S.labDefOpen[n.dataset.def] = !S.labDefOpen[n.dataset.def]; refresh(); });
   el.querySelectorAll('[data-lev]').forEach(i => i.oninput = () => { draft(i.dataset.lev).evidence = i.value; });
   el.querySelector('[data-labrest]').onclick = () => {
-    labelModes().forEach(m => { if (!(S.labels[m] || {})[tid] && !S.labDraft[tid + '|' + m]) S.labDraft[tid + '|' + m] = {label: 'pass', evidence: ''}; });
+    labPanelModes(tid).forEach(m => { if (!(S.labels[m] || {})[tid] && !S.labDraft[tid + '|' + m]) S.labDraft[tid + '|' + m] = {label: 'pass', evidence: ''}; });
     refresh(); };
   el.querySelector('[data-labsave]').onclick = async () => {
     const keys = Object.keys(S.labDraft).filter(k => k.startsWith(tid + '|'));
