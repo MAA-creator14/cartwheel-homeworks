@@ -12,6 +12,29 @@ from harbor_adapter.export import load_export_cases
 from replay.rollout import load_cases
 
 
+def load_trial_results(job_dir: Path) -> tuple[list[dict[str, Any]], str]:
+    """Return a job's trial results and a description of where they came from.
+
+    Harbor 0.23.0 writes the job-level ``result.json`` without
+    ``trial_results`` and stores each trial's result in
+    ``<job_dir>/<trial_name>/result.json`` instead. Use the job-level list when
+    it is present; otherwise read the per-trial files in start-time order.
+    """
+    result_path = job_dir / "result.json"
+    if not result_path.exists():
+        raise FileNotFoundError(f"Harbor result not found: {result_path}")
+    result = json.loads(result_path.read_text())
+    if result.get("trial_results"):
+        return list(result["trial_results"]), "result.json trial_results order"
+    trials = []
+    for path in sorted(job_dir.glob("*/result.json")):
+        trial = json.loads(path.read_text())
+        if "task_name" in trial and "trial_name" in trial:
+            trials.append(trial)
+    trials.sort(key=lambda trial: (str(trial.get("started_at") or ""), trial["trial_name"]))
+    return trials, "per-trial result.json files ordered by started_at"
+
+
 def _case_id(task_name: str, known_ids: set[str]) -> str | None:
     matches = [case_id for case_id in known_ids if task_name.endswith(case_id)]
     return max(matches, key=len) if matches else None
@@ -43,13 +66,10 @@ def summarize_job(
     else:
         cases = load_cases(cases_path)
     by_id = {case["id"]: case for case in cases}
-    result_path = job_dir / "result.json"
-    if not result_path.exists():
-        raise FileNotFoundError(f"Harbor result not found: {result_path}")
-    result = json.loads(result_path.read_text())
+    trial_results, _ = load_trial_results(job_dir)
     trials: dict[str, list[dict[str, Any]]] = defaultdict(list)
     unknown: list[str] = []
-    for trial in result.get("trial_results", []):
+    for trial in trial_results:
         case_id = _case_id(str(trial.get("task_name", "")), set(by_id))
         if case_id is None:
             unknown.append(str(trial.get("task_name", "")))
