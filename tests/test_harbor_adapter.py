@@ -326,3 +326,46 @@ def test_capability_analysis_uses_5_10_and_15_observed_runs(
         "10",
         "15",
     }
+
+
+def test_summary_reads_per_trial_results_when_job_result_omits_them(
+    tmp_path: Path,
+) -> None:
+    """Harbor 0.23.0 writes the job result.json without trial_results."""
+    cases_path = tmp_path / "cases.jsonl"
+    base = {
+        "mode": "response_quality",
+        "input": {"role": "shopper", "user_id": 1, "message": "hello"},
+        "initial_state": {"world": "reseed", "fixture": None},
+        "expected": {"checks": [{"check": "reply_asks_question"}]},
+    }
+    _write_cases(cases_path, [{**base, "id": "e-401"}])
+
+    job = tmp_path / "job"
+    job.mkdir()
+    (job / "result.json").write_text(json.dumps({"stats": {}, "n_total_trials": 5}))
+    for attempt, reward in enumerate([1, 0, 1, 1, 0]):
+        trial_dir = job / f"e-401__t{4 - attempt}"
+        trial_dir.mkdir()
+        (trial_dir / "result.json").write_text(
+            json.dumps(
+                {
+                    "task_name": "cartwheel/evals__e-401",
+                    "trial_name": trial_dir.name,
+                    "started_at": f"2026-11-08T18:0{attempt}:00Z",
+                    "verifier_result": {"rewards": {"reward": reward}},
+                    "exception_info": None,
+                }
+            )
+        )
+
+    from harbor_adapter.summary import load_trial_results
+
+    trials, order = load_trial_results(job)
+    assert [t["trial_name"] for t in trials] == [f"e-401__t{i}" for i in (4, 3, 2, 1, 0)]
+    assert order == "per-trial result.json files ordered by started_at"
+
+    markdown, _ = summarize_job(
+        job, cases_path=cases_path, expected_attempts=5, classify=True
+    )
+    assert "| `e-401` | 3 | 5 |" in markdown
