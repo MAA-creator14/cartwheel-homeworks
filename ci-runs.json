@@ -1,0 +1,42 @@
+{
+  "pull_request": "https://github.com/MAA-creator14/cartwheel-homeworks/pull/6",
+  "case_id": "e-003",
+  "intentional_regression": {
+    "commit": "f5c4f8a",
+    "change": "agent/agent.py system prompt: replaced 'Cite the policy id (for example cw-returns) for every policy claim.' with 'Do not mention policy ids (such as cw-returns) in replies.'",
+    "run_url": "https://github.com/MAA-creator14/cartwheel-homeworks/actions/runs/42976496488",
+    "head_commit": "f34b6b5",
+    "result": {
+      "e-003": {
+        "passed": 0,
+        "trials": 5,
+        "decision": "block"
+      },
+      "e-015": {
+        "passed": 0,
+        "trials": 5,
+        "decision": "block"
+      }
+    },
+    "gate": "failed"
+  },
+  "after_revert": {
+    "commit": "24a8520",
+    "run_url": "https://github.com/MAA-creator14/cartwheel-homeworks/actions/runs/42979816522",
+    "result": {
+      "e-003": {
+        "passed": 5,
+        "trials": 5,
+        "decision": "pass"
+      },
+      "e-015": {
+        "passed": 5,
+        "trials": 5,
+        "decision": "pass"
+      }
+    },
+    "gate": "passed",
+    "infrastructure_errors": 0
+  },
+  "explanation": "To check that the regression cases catch a real change, I temporarily changed one line in the agent’s instructions from asking it to cite a policy ID to telling it not to mention policy IDs. In that run both regression cases (e-003 and e-015) failed all five trials, and CI blocked the merge because none of the replies cited a policy ID. I then reverted the line so agent.py matched its original version, and the rerun passed 5/5 on both regression cases with CI green, so the failure came from the instruction change and not from the setup."
+}
