@@ -70,8 +70,33 @@ def build_score_records(
         A list of score record dicts with keys: score_id, name, value,
         data_type, trace_id, comment (comment is None for verdicts).
     """
-    ### YOUR CODE HERE (hw7)
-    raise NotImplementedError("hw7: implement build_score_records")
+    def verdict(kind: str, trace_id: str, value: int) -> dict[str, Any]:
+        suffix = "verdict" if kind == "verdict" else "risk_verdict"
+        return {
+            "score_id": _stable_id(mode, kind, trace_id),
+            "name": f"{mode}_{suffix}",
+            "value": float(value),
+            "data_type": "NUMERIC",
+            "trace_id": trace_id,
+            "comment": None,
+        }
+
+    records = [verdict("verdict", tid, v) for tid, v in random_verdicts.items()]
+    records += [verdict("risk_verdict", tid, v) for tid, v in risk_verdicts.items()]
+    records.append(
+        {
+            "score_id": _stable_id(mode, "prevalence", batch_label),
+            "name": f"{mode}_corrected_prevalence",
+            "value": float(estimate["corrected"]),
+            "data_type": "NUMERIC",
+            "trace_id": None,
+            "comment": (
+                f"95% CI {estimate['ci_low']}-{estimate['ci_high']}, "
+                f"raw {estimate['raw']}, n={estimate['n_sample']}"
+            ),
+        }
+    )
+    return records
 
 
 # ---------------------------------------------------------------------------
@@ -105,6 +130,13 @@ def post_scores(records: list[dict[str, Any]]) -> int:
         }
         if record.get("trace_id") is not None:
             kwargs["trace_id"] = record["trace_id"]
+        else:
+            # Langfuse rejects a score with no trace, session, or dataset run
+            # (HTTP 400). The batch prevalence score goes to one fixed session
+            # per mode, e.g. "monitoring-unbacked_promise", so the session
+            # holds the prevalence history. The record itself is unchanged.
+            mode = record["name"].removesuffix("_corrected_prevalence")
+            kwargs["session_id"] = f"monitoring-{mode}"
         if record.get("comment"):
             kwargs["comment"] = record["comment"]
         client.create_score(**kwargs)

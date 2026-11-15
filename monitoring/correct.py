@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
+import numpy as np
+
 
 def corrected_mode_prevalence(
     sample_preds: Sequence[int],
@@ -55,5 +57,68 @@ def corrected_mode_prevalence(
             lengths, a value is not 0 or 1, a class is absent, the judge is
             missing a usable correction, or no bootstrap replicate is valid.
     """
-    ### YOUR CODE HERE (hw7)
-    raise NotImplementedError("hw7: implement corrected_mode_prevalence")
+    sample = np.asarray(list(sample_preds), dtype=int)
+    labels = np.asarray(list(test_labels), dtype=int)
+    preds = np.asarray(list(test_preds), dtype=int)
+    if sample.size == 0 or labels.size == 0 or preds.size == 0:
+        raise ValueError("sample and held-out inputs must be nonempty")
+    if labels.size != preds.size:
+        raise ValueError("held-out labels and predictions differ in length")
+    for name, values in (("sample", sample), ("labels", labels), ("predictions", preds)):
+        if not np.isin(values, (0, 1)).all():
+            raise ValueError(f"{name} values must be 0 or 1")
+    if not 0 < confidence < 1:
+        raise ValueError("confidence must be in (0, 1)")
+
+    def rates(lab: np.ndarray, pre: np.ndarray) -> tuple[float, float] | None:
+        """(failure sensitivity, pass specificity), or None if a class is absent."""
+        failures, passes = lab == 1, lab == 0
+        if not failures.any() or not passes.any():
+            return None
+        return float(pre[failures].mean()), float(1 - pre[passes].mean())
+
+    def rogan_gladen(raw: float, sens: float, spec: float) -> float | None:
+        denominator = sens + spec - 1
+        if denominator <= 0:
+            return None  # judge no better than chance: no usable correction
+        return min(1.0, max(0.0, (raw + spec - 1) / denominator))
+
+    observed = rates(labels, preds)
+    if observed is None:
+        raise ValueError("held-out labels need both failures and passes")
+    sensitivity, specificity = observed
+    raw = float(sample.mean())
+    corrected = rogan_gladen(raw, sensitivity, specificity)
+    if corrected is None:
+        raise ValueError(
+            "failure sensitivity + pass specificity <= 1; the judge has no usable correction"
+        )
+
+    # Percentile bootstrap: resample the monitoring verdicts and the paired
+    # held-out (label, prediction) records independently, sizes unchanged.
+    rng = np.random.default_rng(seed)
+    replicates: list[float] = []
+    for _ in range(bootstrap_iterations):
+        sample_draw = sample[rng.integers(0, sample.size, sample.size)]
+        index = rng.integers(0, labels.size, labels.size)
+        draw_rates = rates(labels[index], preds[index])
+        if draw_rates is None:
+            continue
+        estimate = rogan_gladen(float(sample_draw.mean()), *draw_rates)
+        if estimate is not None:
+            replicates.append(estimate)
+    if not replicates:
+        raise ValueError("no bootstrap replicate produced a valid correction")
+    tail = (1 - confidence) / 2 * 100
+    ci_low, ci_high = np.percentile(replicates, [tail, 100 - tail])
+
+    return {
+        "raw": round(raw, 4),
+        "corrected": round(corrected, 4),
+        "ci_low": round(float(ci_low), 4),
+        "ci_high": round(float(ci_high), 4),
+        "confidence": confidence,
+        "failure_sensitivity": round(sensitivity, 4),
+        "pass_specificity": round(specificity, 4),
+        "n_sample": int(sample.size),
+    }

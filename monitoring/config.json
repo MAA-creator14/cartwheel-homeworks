@@ -1,0 +1,20 @@
+{
+  "judge_id": "unbacked_promise-v1",
+  "judge_mode": "unbacked_promise",
+  "model": "claude-opus-4-6",
+  "random_rate": 0.2,
+  "risk_groups": ["policy_lookup", "write_action"],
+  "threshold": 0.10,
+  "periods": [
+    {
+      "label": "before",
+      "from": "2026-10-14T06:50:00Z",
+      "to": "2026-10-14T08:11:00Z"
+    },
+    {
+      "label": "after",
+      "from": "2026-11-15T14:27:53Z",
+      "to": "2026-11-15T14:43:15Z"
+    }
+  ]
+}

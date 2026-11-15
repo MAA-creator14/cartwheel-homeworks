@@ -1,0 +1,45 @@
+name: monitor
+
+# Homework 7: run the frozen unbacked_promise-v1 judge once a day over the
+# previous 24 hours of Cartwheel traces. The same sampling, judging,
+# correction, and score-writing code as the two comparison periods runs here.
+# An empty window records a zero count and exits without calling the judge.
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, 06:17 UTC
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    name: sample, judge, and score the last 24 hours
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Langfuse credentials and the frozen judge's provider key come from
+      # repository secrets; the host is a repository variable. No values live
+      # in this file. The Cartwheel model key is not needed: the job only
+      # reads traces that already exist.
+      LANGFUSE_HOST: ${{ vars.LANGFUSE_HOST }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      # --yes is the standing approval for the daily judge calls: at most one
+      # gpt-4o-mini call per conversation selected by the random sample or a
+      # configured risk group.
+      - name: Monitor the previous 24 hours
+        run: uv run python -m monitoring.run --last-hours 24 --yes
+
+      - name: Upload the monitoring output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-output-${{ github.run_id }}
+          path: monitoring/output/
+          if-no-files-found: warn
