@@ -1,0 +1,12 @@
+{
+  "failure_mode": "missing_policy_citation",
+  "source": "Homework 5 failure report",
+  "prevalence": 0.22,
+  "requirement": "RESP-1",
+  "example_trace_ids": [
+    "cb18cb9b4a42758291ee6fe053f683d1",
+    "44175412fcc5c8a21f0f677b0dd397c4",
+    "b1d0a5d729d5a7680c50150206955e22"
+  ],
+  "why_agent_can_change_it": "In all three traces the agent had the policy facts it stated (the $100 auto-approval threshold, the 5-10 business day refund timing, and human handling of disputes within 24 hours) but did not name the policy identifier (cw-refunds, cw-disputes) in the same reply. The fix is in how the agent writes its reply, so the prompt (a clearer citation rule), the tools (returning the policy id with the result, e.g. from issue_refund or escalate_to_human), or the harness (checking a reply that states a policy fact for an identifier) can change it."
+}
