@@ -1,0 +1,18 @@
+{
+  "comparison_models": [
+    "gpt-5.5",
+    "claude-opus-4-6",
+    "glm-5.2"
+  ],
+  "created_at": "2026-11-16T19:29:59.929314+00:00",
+  "development_model": "glm-5.2",
+  "development_result": "/Users/marcabraham/Projects/Evals course/cartwheel-homeworks/optimize/results/latest-development.json",
+  "development_score": 0.342857,
+  "git_commit": "202e1f6febf93a4ba9f9f4888f34f5a7e68e2f9c",
+  "grader_sha256": "cd2758cd325516e666e6e99ad75fdff8f747483a25f5f7624ae2410f89d35e17",
+  "kind": "starting",
+  "model_selection_sha256": "f727a44eb548a2cb0a308d649e47a51fa23dd41066aff68f1f51f0241550bcb6",
+  "prompt_sha256_12": "368e646318dc",
+  "split_membership_sha256": "ed85c972dd0b98c44c5894b2c00ac251ea52d225a805609fa6af53eeaa10cdec",
+  "write_pass_5": 0
+}
