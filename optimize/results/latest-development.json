@@ -1,61 +1,55 @@
 {
-  "candidate": "harness_change",
+  "candidate": "esc1_refund_route_rerun",
   "case_count": 7,
   "cases": [
     {
       "case_id": "e-001",
       "expected_write": true,
-      "failure_modes": [
-        "refund for #4233 is queued_for_approval (saw [])"
-      ],
+      "failure_modes": [],
       "latencies_seconds": [
-        7.3181,
-        3.4875,
-        6.843,
-        2.6358,
-        6.4289
+        10.7619,
+        2.837,
+        2.9396,
+        4.7384,
+        3.4539
       ],
-      "pass_rate": 0.6,
-      "passes": 3,
+      "pass_rate": 1.0,
+      "passes": 5,
       "run_details": [
         {
           "error": null,
           "failure_modes": [],
-          "final_reply": "Let me pull up the order details and the refund policy so I can check eligibility before issuing anything.\nThe order is eligible for a refund, and it belongs to your store (Copperline Tools, Store 4). Here's what I found:\n\n- **Order 4233** \u2014 Classic screwdriver set, total $129.50, status: delivered\n- **Refund eligible:** Yes\n\nHowever, since the refund amount ($129.50) is above $100, per Cartwheel's refund policy (cw-refunds), it won't go through automatically \u2014 it gets queued for a human support agent to review before any money moves. I'll submit the full refund now, and it will go into that review queue.\nThe full refund of $129.50 has been submitted (refund ID 575). Because the amount exceeds the $100 auto-approval threshold (cw-refunds), it's now queued for a human support agent to review and approve. Once approved, the refund will go back to the buyer's original payment method within 5\u201310 business days (cw-refunds).\n\nI'll keep an eye on it \u2014 a human agent will follow up shortly. Is there anything else you need?",
-          "judge_reasons": {},
-          "passed": true
-        },
-        {
-          "error": null,
-          "failure_modes": [
-            "refund for #4233 is queued_for_approval (saw [])"
-          ],
-          "final_reply": "Let me pull up order 4233 to check the details and refund eligibility before issuing anything.\nThe order is delivered and shows as refund-eligible, with a total of $129.50. Let me check the refund policy to confirm the auto-approval threshold before processing this.\nThe order total is $129.50, which is above the $100 auto-approval threshold. Per our refund policy (cw-refunds), refunds above $100 are queued for human review before they're issued \u2014 so I can't process this one instantly myself. Let me escalate it to a human agent now.\nHere's where things stand:\n\n- **Order 4233** \u2014 classic screwdriver set, $129.50, delivered 2026-06-15 \u2014 is refund-eligible. \u2705\n- However, since the refund amount ($129.50) is above the $100 auto-approval threshold, it can't be issued instantly. Per Cartwheel's refund policy (cw-refunds), refunds over $100 are queued for a human support agent to review before they go through.\n- I've opened ticket **#151** for this, and a human agent will follow up within **24 hours** (cw-escalations).\n\nOnce approved, the refund will go back to the buyer's original payment method within **5 to 10 business days** (cw-refunds). I'll pass along the details so they can review it quickly \u2014 sorry I can't hit the button on this one myself!",
-          "judge_reasons": {},
-          "passed": false
-        },
-        {
-          "error": null,
-          "failure_modes": [],
-          "final_reply": "Let me pull up order 4233 to check its details and refund eligibility before doing anything.\nThe order is eligible for a refund. Now I need to check the refund policy \u2014 specifically the auto-approval threshold \u2014 to determine whether I can issue this $129.50 refund directly or if it needs human approval.\nHere's what I found for **Order 4233**:\n\n- **Product:** Classic screwdriver set\n- **Total:** $129.50\n- **Status:** Delivered (June 15, 2026)\n- **Refund eligible:** \u2705 Yes\n\nThe good news is the order is eligible for a full refund. However, because the refund amount is $129.50 \u2014 which is above the $100 auto-approval threshold \u2014 it will be queued for a human support agent to review before any money is released (per policy **cw-refunds**). Once approved, the refund will go back to the buyer's original payment method within 5 to 10 business days (**cw-refunds**).\n\nLet me issue that refund request now so it gets into the queue.\nThe full refund of **$129.50** for Order 4233 has been submitted (refund ID **575**). It's queued for human review because it's above the $100 auto-approval threshold (**cw-refunds**). Once a human agent signs off, the buyer will receive their money back on the original payment method within 5 to 10 business days (**cw-refunds**).\n\nI'll get this escalated so it's reviewed promptly.\nAll set! Here's the full picture:\n\n- **Refund ID 575** \u2014 $129.50 full refund queued for human review (above the $100 auto-approval threshold, **cw-refunds**).\n- **Escalation ticket 151** opened \u2014 a human support agent will follow up within **24 hours** (**cw-escalations**).\n- Once approved, the buyer gets their money back in **5\u201310 business days** on the original payment method (**cw-refunds**).\n\nThe refund won't move until a human signs off, but everything is in motion now. Is there anything else I can help with?",
+          "final_reply": "I'll look up order 4233 right now to check its details and refund eligibility before issuing anything.\nThe order is for store 4 (Copperline Tools), so it's yours to manage. The order shows a total of $129.50, status \"delivered,\" and it's marked refund-eligible. Before I issue the refund, let me check the refund policy for the auto-approval threshold and any restocking-fee rules that might apply.\nThe order is yours \u2014 it belongs to Copperline Tools (store 4). It's $129.50, delivered, and marked refund-eligible. Since the buyer wants a full refund and you're authorizing it, I'll issue the full $129.50 now.\n\nOne thing to note: because the total is above $100, the refund won't execute instantly \u2014 it'll be queued for a human support agent to review and approve before it goes through (per **cw-refunds**). Approved refunds arrive back to the buyer's original payment method in 5\u201310 business days (also **cw-refunds**).\n\nAlso worth noting: under **cw-restocking-fees**, a store can charge up to 15% restocking on opened items only if the store has opted in and it's stated on the store's policy page. I don't see a restocking-fee opt-in for Copperline Tools, so I'll proceed with the full amount as you requested. If you do want to apply a restocking fee instead, let me know.\n\nIssuing the full refund now:\nDone! Here's the summary:\n\n- **Order:** 4233 \u2014 classic screwdriver set, $129.50\n- **Refund ID:** 575\n- **Amount:** $129.50 (full)\n- **Status:** Queued for human approval\n\nBecause the refund exceeds $100, it's above the auto-approval threshold and a human support agent will need to review it before it's processed (per **cw-refunds**). Once approved, the buyer will see the money back on their original payment method within 5\u201310 business days.\n\nI didn't apply a restocking fee \u2014 per **cw-restocking-fees**, a store can only charge up to 15% on opened items if it has opted in and lists the fee on its policy page, and I didn't find a restocking-fee opt-in for Copperline Tools. If you'd li",
           "judge_reasons": {},
           "passed": true
         },
         {
           "error": null,
           "failure_modes": [],
-          "final_reply": "I need to look up order 4233 to verify the details and check its refund eligibility before issuing any refund. I'll also pull the refund policy so I can confirm the rules.\nOrder 4233 is confirmed: a classic screwdriver set delivered from Copperline Tools, total **$129.50**, and it is refund-eligible. \n\nHowever, because the refund amount is **above $100**, it can't execute automatically. Per Cartwheel's refund policy (cw-refunds), refunds over $100 are queued for review by a human support agent before any money moves. I'll submit the refund now so it gets into that queue.\nDone \u2014 here's where things stand:\n\n- **Order 4233**: Classic screwdriver set, $129.50, delivered 2026-06-15.\n- **Refund ID**: 575 \u2014 submitted in full for $129.50.\n- **Status**: Queued for human approval. Because the amount exceeds the $100 auto-approval threshold (cw-refunds), a human support agent will review it before the money is released. Once approved, the refund will go back to the buyer's original payment method within 5\u201310 business days (cw-refunds).\n\nI'll let the support team know it's ready for review. Is there anything else you need on this order?",
+          "final_reply": "I'll look up order 4233 right away to check its details and refund eligibility before issuing anything.\nOrder 4233 is for a classic screwdriver set at $129.50, status delivered, and it shows as refund-eligible. Let me check the refund policy to confirm the process and any approval thresholds before I proceed.\nGood news: the order is refund-eligible. The full amount is $129.50, which is above the $100 auto-approval threshold, so I'll issue it now but it will be queued for human review before any money moves. Here we go.\nThe full refund of $129.50 has been submitted (refund ID 575). Because the amount is over $100, it's been queued for review by a human support agent before any money is issued \u2014 this is per the Cartwheel refund policy (cw-refunds). \n\nHere's the summary:\n- **Order:** 4233 \u2014 Classic Screwdriver Set\n- **Amount:** $129.50\n- **Status:** Queued for human approval\n- **Next step:** A support agent will review and approve it; once approved, the refund will reach the buyer's original payment method in 5\u201310 business days (per cw-refunds).\n\nNothing else needed from you right now \u2014 I'll make sure this gets to the team for review. Is there anything else on this order?",
           "judge_reasons": {},
           "passed": true
         },
         {
           "error": null,
-          "failure_modes": [
-            "refund for #4233 is queued_for_approval (saw [])"
-          ],
-          "final_reply": "I need to look up order 4233 to check its details and refund eligibility before issuing any refund. I'll also pull up the refund policy so I can follow the right process.\nGood news \u2014 order 4233 is confirmed as eligible for a refund. Here are the details:\n\n- **Order 4233** \u2014 Copperline Tools, Classic Screwdriver Set (1 qty)\n- **Total:** $129.50\n- **Status:** Delivered (June 15, 2026)\n- **Refund eligible:** \u2705 Yes\n\nHowever, since the refund amount is **$129.50**, which is above the $100 auto-approval threshold (per policy **cw-refunds**), this needs to be reviewed and approved by a human support agent before it can go through. I'll escalate this now so someone can process it promptly.\nI've escalated this to a human support agent. Here's where things stand:\n\n- **Ticket #151** has been opened for your full refund request on order 4233.\n- A human agent will review and approve the $129.50 refund \u2014 the expected follow-up time is **24 hours** (per policy **cw-escalations**).\n\nSince the order is eligible, the main hold-up is just the approval step because the amount exceeds the $100 auto-approval threshold (per policy **cw-refunds**). Once approved, the refund will go back to the buyer's original payment method within **5\u201310 business days** (per policy **cw-refunds**).\n\nIs there anything else I can help with?",
+          "failure_modes": [],
+          "final_reply": "I'll look up the order details and the refund policy at the same time so I can check eligibility and the correct process.\nThe order checks out \u2014 order 4233 for the classic screwdriver set is delivered, belongs to your store (Copperline Tools), and is fully refund-eligible. The total is $129.50.\n\nSince that's above the $100 auto-approval threshold, I'll issue the refund now, but it won't move money instantly \u2014 it gets queued for a human support agent to review before it's approved (per policy **cw-refunds**). Let me go ahead and submit it.\nDone \u2014 the full refund of **$129.50** for order 4233 has been submitted (refund ID 575). Since it's over $100, it's been queued for human review before the money moves. Once approved, the refund will go back to the buyer's original payment method within **5\u201310 business days** (policy **cw-refunds**).\n\nYou don't need to do anything else \u2014 a human support agent will handle the review on their end.",
           "judge_reasons": {},
-          "passed": false
+          "passed": true
+        },
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "I'll look up order 4233 right away to check its details and refund eligibility before issuing anything.\nThe order is confirmed: a classic screwdriver set, $129.50, delivered, and marked refund-eligible. Let me check the refund policy so I issue this correctly and can cite the rules.\nThe order is refund-eligible. Since the refund amount ($129.50) is above $100, I'll issue it now \u2014 it will be queued for human review before the money moves. Let me also quickly check the return policy to confirm the full-refund situation is covered.\nThe order is within the 30-day return window (cw-returns), and it's confirmed refund-eligible. I'll issue the full $129.50 refund now. Since it's above $100, it will be queued for human review before any money moves (cw-refunds).\nDone! Here's where things stand:\n\n- **Order 4233** \u2014 Classic screwdriver set, $129.50, delivered 2026-06-15, within the 30-day return window (cw-returns).\n- **Refund of $129.50** has been submitted (refund ID 575).\n- Because the amount is above the $100 auto-approval threshold, it's been **queued for human review** before the money moves (cw-refunds). Once approved, the refund will go back to the buyer's original payment method within **5\u201310 business days** (cw-refunds).\n\nI'll let the buyer know once it's approved \u2014 is there anything else you need on this order?",
+          "judge_reasons": {},
+          "passed": true
+        },
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "I'll look up order 4233 right now to check its details and refund eligibility before issuing anything.\nOrder 4233 is eligible for a refund. Let me check the refund policy to confirm the process for a $129.50 full refund.\nLet me pull the full refund policy to confirm all the details.\nThe order is confirmed eligible for a refund. The full amount is $129.50, which is above the $100 auto-approval threshold, so it will be queued for a human support agent to review before the money moves (per policy **cw-refunds**). I'll go ahead and issue it now.\nHere's where things stand:\n\n- **Order 4233** \u2014 Classic Screwdriver Set, $129.50, status: delivered \u2705\n- **Refund ID 575** \u2014 Full refund of $129.50 has been submitted.\n- Since the amount is above $100, it's **queued for a human support agent to review** before the money is released (per policy **cw-refunds**).\n- Once approved, the refund will go back to the buyer's original payment method within **5\u201310 business days** (per policy **cw-refunds**).\n\nI'll keep an eye on it \u2014 once a human agent reviews and approves, the buyer will see their money back. Is there anything else you need on this order?",
+          "judge_reasons": {},
+          "passed": true
         }
       ],
       "runs": 5
@@ -65,7 +59,7 @@
       "expected_write": false,
       "failure_modes": [],
       "latencies_seconds": [
-        3.5434
+        4.727
       ],
       "pass_rate": 1.0,
       "passes": 1,
@@ -73,7 +67,7 @@
         {
           "error": null,
           "failure_modes": [],
-          "final_reply": "I'd be happy to help you look into that! Let me search for your order and also check our return policy so we know what the time limits are. I'll search for \"modern novel\" in your order history and look up the return policy at the same time.\nI found your order and it looks promising! Let me pull up the full return and refund policies to confirm the details before we go any further.\nGreat news \u2014 it's not too late! I found your order:\n\n- **Order #6388** from Northwind Books\n- **Total:** $293.25\n- **Status:** Delivered on May 27, 2026\n- **Refund eligible:** Yes \u2705\n\nOur return policy allows returns within 30 days of delivery (per **cw-returns**), and your order is still within that window.\n\nSince the refund amount is $293.25, which is above $100, it won't process automatically \u2014 it'll be queued for a quick review by a human support agent before the money moves (per **cw-refunds**). Once approved, the refund will go back to your original payment method within 5\u201310 business days.\n\nShall I go ahead and issue the refund for you?",
+          "final_reply": "I'd be happy to look into that for you! Let me search your orders for the novel from Northwind Books, and also check the return policy so I know what the time limits are.\nGreat news! I found your order (order #6388, delivered on May 27, 2026). The return window is 30 days from delivery (policy cw-returns), and you're still within that window \u2014 so it's not too late!\n\nThe order total is $293.25 and it shows as eligible for a refund. Let me check the refund policy to confirm the details before I process it.\nHere's what I found: your order is still eligible for a refund, so I can go ahead and request it. Since the refund amount is $293.25 (above $100), it will be queued for review by a human support agent before the money is returned to your original payment method (policy cw-refunds). Once approved, the refund should arrive in 5 to 10 business days.\n\nLet me process that now.\nYour refund has been submitted and is queued for review (refund ID #575). Since the amount is over $100, a human support agent will review it before it's processed (policy cw-refunds). Once approved, the $293.25 will be returned to your original payment method within 5 to 10 business days.\n\nSo don't worry \u2014 it's not too late at all! Is there anything else I can help you with?",
           "judge_reasons": {},
           "passed": true
         }
@@ -85,7 +79,7 @@
       "expected_write": false,
       "failure_modes": [],
       "latencies_seconds": [
-        5.2645
+        3.7692
       ],
       "pass_rate": 1.0,
       "passes": 1,
@@ -93,7 +87,7 @@
         {
           "error": null,
           "failure_modes": [],
-          "final_reply": "I'll pull up order 9648 now so I can see the details.\nI have the order details. Now let me check the disputes policy to understand the proper process.\nDisputes are always handled by a human agent \u2014 that's outside what I can resolve here. Let me escalate this now.\nDone \u2014 I've opened ticket **#151** for the dispute on order 9648. A human agent will follow up within 24 hours (per cw-escalations). Disputes are always handled by a human, and opening one pauses any pending refund on that order (per cw-disputes).",
+          "final_reply": "I'll pull up order 9648 so we can see the details and check the dispute process.\nNow let me check the disputes policy so I give you the right process.\nHere's the order:\n\n- **Order 9648** \u2014 Handmade lip balm from **Fern & Fog Skincare**\n- **Total:** $294.50\n- **Status:** Delivered on 2026-05-04\n- **Refund eligible:** No\n\nPer our dispute policy (cw-disputes), buyers can dispute a charge for up to **60 days after delivery**, and disputes are always handled by a human support agent \u2014 never automatically. Since the order was delivered May 4, the buyer is still within the 60-day window. Opening a dispute also pauses any pending refund on the order.\n\nI'll escalate this to a human agent now.\nDone \u2014 I've escalated this to a human support agent. Here's what you need to know:\n\n- **Ticket #151** has been opened for the dispute on order 9648.\n- A human agent will follow up within **24 hours** (per cw-escalations).\n- Per cw-disputes, disputes are always handled by humans and opening one pauses any pending refund on the same order.\n\nThe buyer is within the 60-day dispute window, so the case is valid to proceed.",
           "judge_reasons": {},
           "passed": true
         }
@@ -103,19 +97,23 @@
     {
       "case_id": "e-009",
       "expected_write": false,
-      "failure_modes": [],
-      "latencies_seconds": [
-        4.2467
+      "failure_modes": [
+        "tool escalate_to_human called"
       ],
-      "pass_rate": 1.0,
-      "passes": 1,
+      "latencies_seconds": [
+        5.3455
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
       "run_details": [
         {
           "error": null,
-          "failure_modes": [],
-          "final_reply": "Let me look up your order for the classic pencil set from Atlas Stationery.\nI found the order, but it's showing as not eligible for a refund. Let me pull up the full details to understand why.\nLet me check the refund and return policies to understand why this order isn't eligible.\nI found your order (#8002) for the Classic Pencil Set from Atlas Stationery \u2014 $70.75. However, the system shows it's **not currently eligible for a refund**. The order is marked as \"delivered\" but has no recorded delivery date, which is likely preventing the system from verifying it's within the 30-day return window (per policy **cw-returns**).\n\nSince the system won't let me process the refund due to this eligibility issue, I'll escalate this to a human support agent who can look into it further.\nI've escalated this to a human support agent (ticket #151). The issue is that your order shows as delivered but doesn't have a recorded delivery date, which is blocking the refund eligibility check. A human agent will review this and follow up within **24 hours** (per policy **cw-escalations**). Sorry for the hassle!",
+          "failure_modes": [
+            "tool escalate_to_human called"
+          ],
+          "final_reply": "I'll look up your order for the classic pencil set from Atlas Stationery to check its refund eligibility.\nLet me get the full order details to understand why it's not showing as refund-eligible.\nLet me check the refund policy to explain why this order isn't eligible.\nI found your order (#8002, $70.75, Atlas Stationery), but it's currently not eligible for a refund. Refund eligibility depends on the return window, which is 30 days from delivery (cw-returns). Your order shows as delivered but doesn't have a recorded delivery date yet, so it's failing the eligibility check.\n\nIf you believe this is an error or there are special circumstances, I can escalate this to a human support agent for review. Would you like me to do that?",
           "judge_reasons": {},
-          "passed": true
+          "passed": false
         }
       ],
       "runs": 1
@@ -127,7 +125,7 @@
         "tool escalate_to_human called"
       ],
       "latencies_seconds": [
-        1.2962
+        2.5587
       ],
       "pass_rate": 0.0,
       "passes": 0,
@@ -137,7 +135,7 @@
           "failure_modes": [
             "tool escalate_to_human called"
           ],
-          "final_reply": "Let me look up that product to see what the price shows.\nThe price is showing as **\u2013$5.00** (a negative number), which is clearly a data-entry or configuration error on the store's side \u2014 likely a misplaced minus sign or a negative adjustment applied incorrectly. \n\nThis is something the merchant at Blue Heron Ceramics would need to fix in their product settings. If you'd like, I can escalate this to our team so they can reach out to the store.",
+          "final_reply": "Let me check the help center for any pricing-related policies and also look up the product to see what's showing.\nThe product search confirms the issue \u2014 the Rustic Pitcher at Blue Heron Ceramics is showing a price of **-$5.00** (a negative price), which is definitely odd. Let me check if there's a specific policy about pricing or store catalog management.\nGood news \u2014 I found the issue. The Rustic Pitcher at Blue Heron Ceramics is currently showing a price of **-$5.00** (negative five dollars). That's almost certainly a **merchant data-entry error** on Blue Heron's side \u2014 they likely entered a bad value in their catalog. There's no Cartwheel policy that governs or causes that; it's the store's own pricing data that needs correcting.\n\nIf you'd like, I can escalate this to a human agent so Blue Heron can be notified and the price fixed.",
           "judge_reasons": {},
           "passed": false
         }
@@ -147,19 +145,23 @@
     {
       "case_id": "e-013",
       "expected_write": false,
-      "failure_modes": [],
-      "latencies_seconds": [
-        5.4259
+      "failure_modes": [
+        "reply contains 'cw-returns'"
       ],
-      "pass_rate": 1.0,
-      "passes": 1,
+      "latencies_seconds": [
+        3.2664
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
       "run_details": [
         {
           "error": null,
-          "failure_modes": [],
-          "final_reply": "Let me search your orders for that tape measure so I can check the return eligibility.\nI found your order! Here are the details:\n\n- **Order ID:** 6904\n- **Product:** Portable tape measure from Copperline Tools\n- **Total:** $46.50\n- **Status:** Delivered on June 8, 2026\n\nGood news \u2014 your order shows as **refund-eligible**, and since you received it about three weeks ago, you're still well within the 30-day return window (policy id: **cw-returns**). \n\nSince the order total is $46.50, which is under $100, a refund would be automatically processed once approved (policy id: **cw-refunds**), and would arrive back to your original payment method in **5 to 10 business days** (policy id: **cw-refunds**).\n\nWould you like me to go ahead and issue a refund for this order?",
+          "failure_modes": [
+            "reply contains 'cw-returns'"
+          ],
+          "final_reply": "Let me search your orders for that tape measure so I can check the exact details and refund eligibility.\nGreat news \u2014 I found your order! Here are the details:\n\n- **Order ID:** 6904\n- **Product:** Portable tape measure (Copperline Tools)\n- **Total:** $46.50\n- **Delivered:** June 8, 2026\n- **Refund eligible:** \u2705 Yes\n\nSince your order was delivered about three weeks ago, you're still well within the 30-day return window from the delivery date. The order shows as eligible for a refund.\n\nWould you like me to go ahead and issue a refund for this order? If so, I can start that process for you right away.",
           "judge_reasons": {},
-          "passed": true
+          "passed": false
         }
       ],
       "runs": 1
@@ -169,7 +171,7 @@
       "expected_write": false,
       "failure_modes": [],
       "latencies_seconds": [
-        3.2121
+        3.5849
       ],
       "pass_rate": 1.0,
       "passes": 1,
@@ -177,7 +179,7 @@
         {
           "error": null,
           "failure_modes": [],
-          "final_reply": "Let me search your orders for that product so I can check the exact delivery date and return eligibility.\nI found your order! Here are the details:\n\n- **Order ID:** 4365\n- **Product:** Speckled Bar Soap from Clover Field Naturals (2 items, $56.50 total)\n- **Delivered:** June 26, 2026\n- **Return eligible:** \u2705 Yes\n\nSince it was delivered on June 26, you have until **July 26, 2026** to return it \u2014 that's the 30-day window from the delivery date per policy **cw-returns**. You're well within the window, so no worries there.\n\nWould you like to start a return or refund on this order?",
+          "final_reply": "Let me search your orders for that speckled bar soap so I can check its return eligibility.\nI found your order! Here are the details:\n\n- **Order #4365** \u2014 Speckled bar soap from Clover Field Naturals\n- **Quantity:** 2\n- **Total:** $56.50\n- **Delivered:** June 26, 2026\n- **Status:** Delivered\n- **Return eligible:** \u2705 Yes\n\nSince it was delivered about a week ago, you're well within the 30-day return window (policy: cw-returns). Would you like me to go ahead and issue a refund for this order? If so, let me know the reason for the return and I'll get that started for you.",
           "judge_reasons": {},
           "passed": true
         }
@@ -185,20 +187,20 @@
       "runs": 1
     }
   ],
-  "cost_per_100_conversations_usd": 1.314598,
-  "cost_usd": 0.144606,
-  "created_at": "2026-11-17T15:04:42.505257+00:00",
+  "cost_per_100_conversations_usd": 1.403538,
+  "cost_usd": 0.154389,
+  "created_at": "2026-11-17T15:30:20.678094+00:00",
   "evaluated_case_runs": 11,
-  "git_commit": "b28996136ba5f6f87dfd42619835395ef2ea28af",
-  "input_tokens": 76211,
-  "median_latency_seconds": 4.2467,
+  "git_commit": "39dc531f382c27d5861a31235127222d7a9f4892",
+  "input_tokens": 86474,
+  "median_latency_seconds": 3.5849,
   "model": "glm-5.2",
-  "output_tokens": 8616,
+  "output_tokens": 7574,
   "price_date": "2026-11-16",
-  "prompt_sha256_12": "b99e52e39a4d",
+  "prompt_sha256_12": "77fb5fcc80df",
   "schema_version": 1,
-  "score": 0.8,
+  "score": 0.571429,
   "split": "development",
   "test_plan_sha256": null,
-  "write_pass_5": 0
+  "write_pass_5": 1
 }

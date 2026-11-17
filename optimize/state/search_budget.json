@@ -1,5 +1,21 @@
 {
   "maximum_calls": 150,
-  "reservations": [],
-  "used_calls": 0
+  "reservations": [
+    {
+      "calls": 11,
+      "label": "loop_baseline",
+      "reserved_at": "2026-11-17T15:22:19.274859+00:00"
+    },
+    {
+      "calls": 11,
+      "label": "esc1_refund_route",
+      "reserved_at": "2026-11-17T15:23:54.795896+00:00"
+    },
+    {
+      "calls": 11,
+      "label": "esc1_refund_route_rerun",
+      "reserved_at": "2026-11-17T15:29:28.636860+00:00"
+    }
+  ],
+  "used_calls": 33
 }
