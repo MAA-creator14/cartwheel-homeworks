@@ -349,7 +349,36 @@ def _call(
         result = fn(wrapper.context, *args)
     except NotImplementedError as exc:
         result = {"ok": False, "error": "not_implemented", "reason": str(exc)}
+    result = _with_policy_reminder(result)
     record_tool_result(wrapper.context, result)
+    return result
+
+
+ORDER_POLICY_REMINDER = (
+    "If your reply states the return window, refund eligibility, or refund "
+    "timing for this order, name cw-returns or cw-refunds in that same reply."
+)
+
+
+def _has_order_record(value: Any) -> bool:
+    """Whether a tool result contains an order record (any tool, any depth)."""
+    if isinstance(value, dict):
+        if "refund_eligible" in value:
+            return True
+        return any(_has_order_record(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_order_record(item) for item in value)
+    return False
+
+
+def _with_policy_reminder(result: Any) -> Any:
+    """Harness check (Homework 8): add a citation reminder to order results.
+
+    Applies to every tool's result after it returns. It only adds a field the
+    model reads; the tool's data, permissions, and side effects are unchanged.
+    """
+    if isinstance(result, dict) and result.get("ok") and _has_order_record(result):
+        return {**result, "policy_reminder": ORDER_POLICY_REMINDER}
     return result
 
 
