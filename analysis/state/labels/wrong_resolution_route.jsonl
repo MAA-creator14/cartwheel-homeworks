@@ -123,3 +123,5 @@
 {"trace_id": "7fd3ebff739dbed9bceecf647928f013", "mode": "wrong_resolution_route", "label": "pass", "value": 0, "evidence": "", "note": "", "source": "human", "ts": "2026-10-25T16:17:37+00:00", "langfuse_synced": true}
 {"trace_id": "88d999bbacf3da29da5b0e2e5cfeb7de", "mode": "wrong_resolution_route", "label": "pass", "value": 0, "evidence": "", "note": "", "source": "human", "ts": "2026-10-25T16:19:03+00:00", "langfuse_synced": true}
 {"trace_id": "1619547595bf5aecd522e2e935bac6fe", "mode": "wrong_resolution_route", "label": "pass", "value": 0, "evidence": "", "note": "", "source": "human", "ts": "2026-10-25T16:23:38+00:00", "langfuse_synced": true}
+{"trace_id": "1619547595bf5aecd522e2e935bac6fe", "mode": "wrong_resolution_route", "label": "pass", "value": 0, "evidence": "", "note": "", "source": "human", "ts": "2026-11-01T16:38:06+00:00", "langfuse_synced": true}
+{"trace_id": "2d1c3cf74f7d877ac0f09d1358e3befe", "mode": "wrong_resolution_route", "label": "pass", "value": 0, "evidence": "", "note": "", "source": "human", "ts": "2026-11-03T07:59:28+00:00", "langfuse_synced": true}
