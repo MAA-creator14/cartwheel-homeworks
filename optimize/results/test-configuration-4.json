@@ -1,0 +1,162 @@
+{
+  "candidate": "final-version-model-3",
+  "case_count": 5,
+  "cases": [
+    {
+      "case_id": "e-002",
+      "expected_write": true,
+      "failure_modes": [],
+      "latencies_seconds": [
+        7.6353,
+        2.4315,
+        2.7918,
+        2.2971,
+        2.817
+      ],
+      "pass_rate": 1.0,
+      "passes": 5,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me pull up order 5631 to check the details and refund eligibility.\nThe order is eligible for a refund. I'll issue the full $248.75 refund now.\nDone \u2014 the full $248.75 refund for order 5631 has been submitted (refund ID 575). Since it's above the $100 auto-approval threshold, it's queued for a human agent to review (cw-refunds). Your buyer should see the refund once it's approved.",
+          "judge_reasons": {},
+          "passed": true
+        },
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me pull up that order to check refund eligibility before issuing anything.\nOrder 5631 is delivered, eligible for refund, and totals $248.75. Let me check the refund policy on auto-approval thresholds before I issue it.\nOrder 5631 is eligible. The $248.75 refund exceeds the $100 auto-approval threshold, so it'll be queued for a human to review before any money moves (per cw-refunds). Issuing it now.\nDone \u2014 refund of $248.75 is queued (refund ID 575). Since it's over $100, a human agent will review it before the money moves. Once approved, the buyer will see it back on their original payment method in 5\u201310 business days (cw-refunds).",
+          "judge_reasons": {},
+          "passed": true
+        },
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me pull up that order to check its details and refund eligibility.\nOrder 5631 is eligible for a refund. Let me check the refund policy on the auto-approval threshold before issuing.\nThe order total is $248.75 and it's refund-eligible. Since it's over $100, the refund will be queued for human approval rather than processing automatically (per cw-refunds). I'll issue it now.\nDone. Full refund of $248.75 on order 5631 has been queued for human review since it exceeds the $100 auto-approval threshold (cw-refunds). Once approved, the refund will reach the buyer's original payment method in 5\u201310 business days.",
+          "judge_reasons": {},
+          "passed": true
+        },
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me pull up that order to check the details and refund eligibility.\nOrder 5631 is $248.75 and marked refund-eligible. Let me check the refund policy for the auto-approval threshold before processing.\nThe order is $248.75, which is above the $100 auto-approval threshold, so per our refund policy (cw-refunds) it'll be queued for human review. I'll issue it now.\nDone \u2014 refund for $248.75 on order 5631 has been submitted (refund ID 575). Since it's over $100, it's queued for a human agent to approve per our refund policy (cw-refunds). Once approved, the buyer will see the money back in 5\u201310 business days.",
+          "judge_reasons": {},
+          "passed": true
+        },
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me pull up order 5631 to check the refund eligibility before processing anything.\nThe order is delivered and refund-eligible. I need to check the refund auto-approval threshold before issuing.\nOrder 5631 is eligible for a refund. Since it's $248.75 (over $100), it'll be queued for human approval before any money moves (per cw-refunds). I'll issue it now.\nDone. Refund of $248.75 for order 5631 is queued for human review since it's above the $100 auto-approval threshold (cw-refunds). Once approved, the buyer will see the money back in 5\u201310 business days.",
+          "judge_reasons": {},
+          "passed": true
+        }
+      ],
+      "runs": 5
+    },
+    {
+      "case_id": "e-005",
+      "expected_write": false,
+      "failure_modes": [],
+      "latencies_seconds": [
+        3.8176
+      ],
+      "pass_rate": 1.0,
+      "passes": 1,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me pull up the order details and check our dispute policy at the same time so I can give you accurate guidance.\nHere's what I found:\n\n**Order 5117**\n- Product: Portable utility knife (qty 2)\n- Store: Copperline Tools\n- Total: $232.00\n- Status: Delivered on 2026-05-26\n- Refund eligible: No\n\nPer our dispute policy (**cw-disputes**), buyers can dispute a charge for up to 60 days after delivery, and **disputes are always handled by a human support agent** \u2014 they are never resolved automatically. I also note from **cw-escalations** that disputes are one of the case types that always go to a human, with a response within 24 hours.\n\nSince I can't open a dispute myself, I'll escalate this to a human support agent right now with all the order context.\nA dispute ticket has been opened \u2014 **Ticket #151**. A human support agent will follow up within **24 hours** (per **cw-escalations**).\n\nOne thing to keep in mind: per **cw-disputes**, opening a dispute pauses any pending refund on the same order, and disputes are always handled by a human agent. If you need anything else on this order in the meantime, just let me know.",
+          "judge_reasons": {},
+          "passed": true
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-010",
+      "expected_write": false,
+      "failure_modes": [
+        "tool escalate_to_human called"
+      ],
+      "latencies_seconds": [
+        3.5045
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "tool escalate_to_human called"
+          ],
+          "final_reply": "I'll look up your wool socks order from Harbor Knits and check our return policy at the same time so I can calculate the exact last return day for you.\nI found your order (Order #8001, wool socks from Harbor Knits) and the return policy. Here's your answer:\n\nYour wool socks were delivered on **June 23, 2026**. Under Cartwheel's return policy, items can be returned within 30 days of delivery (cw-returns). Counting 30 days from that date, your **last day to return them is July 23, 2026**.\n\nOne important note: your order is currently showing as **not eligible for a refund**, which could mean the window has already passed or there's another eligibility issue. If you'd like, I can look into why the order isn't refund-eligible right now, or help with anything else!",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-011",
+      "expected_write": false,
+      "failure_modes": [
+        "tool escalate_to_human called"
+      ],
+      "latencies_seconds": [
+        2.7144
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "tool escalate_to_human called"
+          ],
+          "final_reply": "Let me search your store's catalog for that rustic pitcher to check the current listed price.\nIt looks like the store lookup needs a store name rather than the ID. Let me try searching with the store name \"blue heron ceramics.\"\nHere's what I found in your store's catalog:\n\n- **Product:** Rustic Pitcher\n- **Product ID:** 4\n- **Listed Price:** $5.00\n\nHowever, I want to flag something \u2014 the price is showing as **negative** in the system (`-5.0`), which looks like it could be a data error. You may want to double-check the pricing in your product settings. If the price field is corrupted or misconfigured, that's something that would need to be corrected on your end or escalated to our team.\n\nWould you like me to look into anything else regarding this product?",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-015",
+      "expected_write": false,
+      "failure_modes": [],
+      "latencies_seconds": [
+        3.2855
+      ],
+      "pass_rate": 1.0,
+      "passes": 1,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Two weeks ago would put you well within the 30-day window from the general policy, but since Atlas Stationery could have their own override, let me pull up your actual order to confirm the specifics.\nGood news \u2014 yes, you can still send it back. Here's what I found for your order (#9413):\n\n- **Delivered:** June 17, 2026\n- **Return window:** 30 days from delivery (per policy **cw-returns**), so you're covered through **July 17, 2026**.\n- **Refund eligibility:** Confirmed \u2014 your order is marked as refund-eligible.\n\nSince you're only about two weeks in, you've got roughly two more weeks to get it back to Atlas Stationery. Just make sure the pen is in the condition described by the store's listing.\n\nWant me to start the refund process for you?",
+          "judge_reasons": {},
+          "passed": true
+        }
+      ],
+      "runs": 1
+    }
+  ],
+  "cost_per_100_conversations_usd": 1.081771,
+  "cost_usd": 0.097359,
+  "created_at": "2026-11-17T15:53:04.485423+00:00",
+  "evaluated_case_runs": 9,
+  "git_commit": "17ad5729d1f58867bc42aa7ff547395f3d8b83a4",
+  "input_tokens": 54155,
+  "median_latency_seconds": 2.817,
+  "model": "glm-5.2",
+  "output_tokens": 4896,
+  "price_date": "2026-11-16",
+  "prompt_sha256_12": "77fb5fcc80df",
+  "schema_version": 1,
+  "score": 0.6,
+  "split": "test",
+  "test_plan_sha256": "978131888d8608327d300a2fd6a28aa385ee9d36992a5a334b9dfa4e84cdbb8d",
+  "write_pass_5": 1
+}

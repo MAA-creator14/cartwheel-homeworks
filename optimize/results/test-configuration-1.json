@@ -1,0 +1,178 @@
+{
+  "candidate": "starting-version-model-1",
+  "case_count": 5,
+  "cases": [
+    {
+      "case_id": "e-002",
+      "expected_write": true,
+      "failure_modes": [
+        "reply contains 'cw-refunds'"
+      ],
+      "latencies_seconds": [
+        16.8099,
+        13.0762,
+        20.8943,
+        15.8411,
+        10.0132
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "I\u2019ll look up order 5631 first to confirm its details and refund eligibility before taking any refund action.\nOrder 5631 is eligible, so I\u2019ll issue the full refund of $248.75 now.\nDone \u2014 the $248.75 refund was queued for approval.\n\nRefund ID: 575. A human will review it because it\u2019s over the auto-approval limit.",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "I\u2019ll look up order 5631 first so I can check whether a full refund is eligible before processing it.\nOrder 5631 is eligible, so I\u2019ll submit the full refund for $248.75 now.\nBecause this refund is over the auto-approval limit, I\u2019ll open a human review ticket so support can follow up.\nSubmitted the $248.75 full refund.\n\nIt needs human approval because it\u2019s over $100. Ticket #151 was opened; they\u2019ll follow up within 24 hours.",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "I\u2019ll check order 5631 first so I can confirm its refund eligibility and the refundable amount.\nOrder 5631 is refund-eligible, so I\u2019ll issue the full $248.75 refund now.\nBecause the refund is above the auto-approval limit, I\u2019ll open a human review ticket so support can follow up.\nThe full $248.75 refund was submitted, but it needs human approval.\n\nRefund ID: 575  \nTicket ID: 151  \nSupport will follow up within 24 hours.",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "I\u2019ll look up order 5631 first so I can confirm the order, amount, and refund eligibility before taking action.\nOrder 5631 is eligible, so I\u2019ll submit a full refund for $248.75 now.\nBecause the refund is above the auto-approval limit, I\u2019ll open a human review ticket so support can follow up.\nFull refund request submitted: $248.75.\n\nIt needs human approval because it\u2019s over $100. Ticket #151 \u2014 they\u2019ll follow up within 24 hours.",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "I\u2019ll check order 5631 first so I can confirm its refund eligibility and amount before taking action.\nOrder 5631 is eligible, so I\u2019ll issue the full refund of $248.75 now.\nRefund request submitted for $248.75.\n\nIt\u2019s over the auto-approval limit, so a human will review it. Refund ID: 575.",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 5
+    },
+    {
+      "case_id": "e-005",
+      "expected_write": false,
+      "failure_modes": [
+        "reply contains 'cw-disputes'"
+      ],
+      "latencies_seconds": [
+        13.3307
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-disputes'"
+          ],
+          "final_reply": "I\u2019ll look up order 5117 to verify the order details and see what support actions are available before opening or escalating a dispute. \n\nI can\u2019t open a charge dispute directly from the available support tools, so I\u2019ll escalate this order to a human support agent with the order details and charge-contest context. \n\nI looked up order 5117 and escalated it for human handling.\n\nDetails:\n- Ticket ID: 151\n- SLA: human follow-up within 24 hours\n- Order: 5117\n- Store: Copperline Tools\n- Status: Delivered\n- Total: $232.00\n- Refund eligible: No\n\nI don\u2019t have a direct tool to open a payment dispute/chargeback case myself, so I routed it to the human support team with the charge-contest context.",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-010",
+      "expected_write": false,
+      "failure_modes": [
+        "tool escalate_to_human called"
+      ],
+      "latencies_seconds": [
+        38.0473
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "tool escalate_to_human called"
+          ],
+          "final_reply": "I\u2019ll look up your orders for \u201cwool socks\u201d so I can identify the Harbor Knits purchase and its return deadline.\nI found the order, and I\u2019ll check the return policy so I can calculate the exact final return date from the delivery date.\nI\u2019ll open the Cartwheel return policy to confirm the standard return window and whether store overrides are referenced.\nI\u2019ll check if there is a store-specific Harbor Knits policy override before giving the final date.\nI\u2019ll search once more using the Harbor Knits store id in case its override is listed under an internal store reference.\nI\u2019ll open the specific order to confirm the delivery date before I give you the exact last return day.\nJuly 23, 2026.\n\nThat\u2019s based on the Harbor Knits wool socks order being delivered on June 23, 2026, and Cartwheel\u2019s 30-days-from-delivery return window (cw-returns).",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-011",
+      "expected_write": false,
+      "failure_modes": [
+        "tool escalate_to_human called"
+      ],
+      "latencies_seconds": [
+        14.0993
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "tool escalate_to_human called"
+          ],
+          "final_reply": "I\u2019ll look up the product in your store\u2019s catalog so I can confirm the listed price that\u2019s currently showing.\nI couldn\u2019t search by the numeric store id because the catalog search expects a store name, so I\u2019ll search the catalog for that product and store name together.\nYour **Rustic Pitcher** from **Blue Heron Ceramics** is currently showing a listed price of **-$5.00 USD**.\n\nThat looks unusual because it\u2019s a negative price. You may want to review the listing in your merchant dashboard or have support check it if that wasn\u2019t intentional.",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-015",
+      "expected_write": false,
+      "failure_modes": [],
+      "latencies_seconds": [
+        44.3119
+      ],
+      "pass_rate": 1.0,
+      "passes": 1,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "I\u2019ll look up your matching order and Atlas Stationery\u2019s return policy so I can check the actual delivery date, item, and any store-specific return window.\nI found a matching delivered order, and I\u2019ll fetch the platform returns policy plus a more specific Atlas policy search result so I can avoid guessing about any store override.\nI need the full order record now because I shouldn\u2019t confirm return/refund eligibility from a search result alone.\nYes \u2014 **if you mean order #9413 from Atlas Stationery, you can still send it back.**\n\nHere\u2019s the concrete check:\n\n- Your matching order is **delivered** and is currently marked **refund-eligible** in Cartwheel.\n- The order record shows delivery on **2026-06-17**.\n- Cartwheel\u2019s standard return window is **30 days from delivery**, not from the purchase date. Policy: **cw-returns**.\n- I did **not** find an Atlas Stationery-specific return-window override in the help-center results. Store overrides only apply when stated on the store\u2019s own policy page. Policy: **cw-store-overrides**.\n\nSo, based on the order record and the Cartwheel policy: **yes, it\u2019s still returnable.**",
+          "judge_reasons": {},
+          "passed": true
+        }
+      ],
+      "runs": 1
+    }
+  ],
+  "cost_per_100_conversations_usd": 5.134944,
+  "cost_usd": 0.462145,
+  "created_at": "2026-11-17T15:48:59.599247+00:00",
+  "evaluated_case_runs": 9,
+  "git_commit": "202e1f6febf93a4ba9f9f4888f34f5a7e68e2f9c",
+  "input_tokens": 52277,
+  "median_latency_seconds": 15.8411,
+  "model": "gpt-5.5",
+  "output_tokens": 6692,
+  "price_date": "2026-11-16",
+  "prompt_sha256_12": "368e646318dc",
+  "schema_version": 1,
+  "score": 0.2,
+  "split": "test",
+  "test_plan_sha256": "978131888d8608327d300a2fd6a28aa385ee9d36992a5a334b9dfa4e84cdbb8d",
+  "write_pass_5": 0
+}

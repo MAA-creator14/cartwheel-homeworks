@@ -1,0 +1,174 @@
+{
+  "candidate": "starting-version-model-2",
+  "case_count": 5,
+  "cases": [
+    {
+      "case_id": "e-002",
+      "expected_write": true,
+      "failure_modes": [
+        "reply contains 'cw-refunds'"
+      ],
+      "latencies_seconds": [
+        18.0316,
+        9.8143,
+        10.3712,
+        11.3457,
+        12.3269
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "Let me pull up the order first to check its refund eligibility.\nOrder 5631 is from your store, delivered, and refund-eligible. The full amount is **$248.75**. Issuing the refund now.\nThe refund of **$248.75** has been submitted (refund #575), but because it's over the $100 auto-approval threshold, a human agent needs to approve it first. They should process it shortly\u2014no further action needed from you.",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "Let me pull up the order first to check its refund eligibility.\nOrder 5631 is eligible for a refund. Issuing the full $248.75 now.\nBecause the amount is over $100, the refund ($248.75) has been queued for human review (refund #575). A support agent will approve it shortly and your buyer will be credited after that. Nothing else needed from you!",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "Let me pull up the order details first to check refund eligibility.\nOrder 5631 is eligible for a refund. Issuing the full $248.75 now.\nBecause the refund is over $100, it's been **queued for human approval** (refund #575, $248.75). A support agent will review and finalize it\u2014your buyer should see the credit once it's approved. Nothing else needed from you!",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "Let me pull up the order details first to check refund eligibility.\nOrder 5631 is eligible for a refund. The full amount is **$248.75**. Let me process that now.\nThe refund of **$248.75** has been submitted (refund #575), but since it's above the $100 auto-approval threshold, a human agent needs to approve it first. They'll take it from here \u2014 your buyer should see the refund once it's approved. \ud83d\udc4d",
+          "judge_reasons": {},
+          "passed": false
+        },
+        {
+          "error": null,
+          "failure_modes": [
+            "reply contains 'cw-refunds'"
+          ],
+          "final_reply": "Let me pull up the order details first to check refund eligibility.\nOrder 5631 is eligible for a refund. I'll go ahead and issue the full $248.75 now.\nThe refund of **$248.75** has been submitted (refund #575), but because it's over the $100 auto-approval limit, a human agent needs to sign off on it. They'll review and finalize it shortly \u2014 no further action needed from you.",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 5
+    },
+    {
+      "case_id": "e-005",
+      "expected_write": false,
+      "failure_modes": [],
+      "latencies_seconds": [
+        18.1275
+      ],
+      "pass_rate": 1.0,
+      "passes": 1,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me pull up the order details first to see what we're working with.\nLet me also check if there's a policy on charge disputes.\nHere's what I've found:\n\n- **Order 5117** \u2013 2\u00d7 Portable Utility Knife from **Copperline Tools**, $232.00, delivered 2026-05-26. The order is **not refund-eligible** at this point.\n- Per policy **cw-disputes**, disputes must always be handled by a human support agent and can't be resolved automatically. The buyer is within the 60-day post-delivery dispute window.\n\nSince opening a dispute is outside my authority, I'll escalate this to a human agent right now.\nDone! Here's the summary:\n\n- **Ticket #151** has been created for a human agent to open the dispute on Order #5117.\n- **SLA:** A human agent will follow up within **24 hours**.\n- The order is within the 60-day dispute window (delivered May 26, 2026), so we're good on timing.\n\nLet me know if you need anything else on this case!",
+          "judge_reasons": {},
+          "passed": true
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-010",
+      "expected_write": false,
+      "failure_modes": [
+        "tool escalate_to_human called"
+      ],
+      "latencies_seconds": [
+        16.339
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "tool escalate_to_human called"
+          ],
+          "final_reply": "Let me find your wool socks order and check the return policy so I can give you that exact date.\nLet me check if Harbor Knits has a store-specific return policy that might change the standard window.\nNo Harbor Knits-specific store policy came up, so the standard Cartwheel return window applies. Here's what I found:\n\n- **Return policy (cw-returns):** Items can be returned within **30 days of delivery**.\n- **Your delivery date:** June 23, 2026\n\nThat means your **last day to return the wool socks is July 23, 2026**.\n\nHowever, I do want to flag that your order (8001) is currently showing as **not refund-eligible**. If you try to initiate a return and run into issues, feel free to reach out and I can look into it further or escalate to a human agent for you.",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-011",
+      "expected_write": false,
+      "failure_modes": [
+        "tool escalate_to_human called"
+      ],
+      "latencies_seconds": [
+        14.7715
+      ],
+      "pass_rate": 0.0,
+      "passes": 0,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [
+            "tool escalate_to_human called"
+          ],
+          "final_reply": "Let me look up the rustic pitcher in your store's catalog to confirm the listed price.\nLet me try searching by your store name instead.\nI found the **Rustic Pitcher** in your Blue Heron Ceramics catalog, and there's definitely something wrong:\n\n- **Listed price:** **-$5.00**\n\nThat's a negative price, which is clearly a data error \u2014 no product should show a negative amount. This looks like a bug or a bad entry.\n\nUnfortunately, I don't have the ability to edit product listings directly. Here's what I'd suggest:\n\n1. **If you can update it yourself** \u2014 head into your merchant dashboard and correct the price on the Rustic Pitcher listing.\n2. **If you need platform help** \u2014 I can escalate this to a human on our team to investigate and fix it.\n\nWould you like me to escalate this, or are you able to update the price on your end?",
+          "judge_reasons": {},
+          "passed": false
+        }
+      ],
+      "runs": 1
+    },
+    {
+      "case_id": "e-015",
+      "expected_write": false,
+      "failure_modes": [],
+      "latencies_seconds": [
+        23.6566
+      ],
+      "pass_rate": 1.0,
+      "passes": 1,
+      "run_details": [
+        {
+          "error": null,
+          "failure_modes": [],
+          "final_reply": "Let me find that order so I can check its return eligibility for you.\nGreat news \u2014 you're well within the return window. Here are the details:\n\n- **Order #9413** \u2013 Handmade fountain pen from Atlas Stationery\n- **Delivered:** June 17, 2026\n- **30-day return deadline:** July 17, 2026\n- **Refund eligible:** \u2705 Yes\n\nSince it's only been about two weeks, you've still got plenty of time. Just make sure the pen is in the condition described in the original listing *(cw-returns)*.\n\nWould you like me to go ahead and start the refund process for the $274.50, or do you have any other questions first?",
+          "judge_reasons": {},
+          "passed": true
+        }
+      ],
+      "runs": 1
+    }
+  ],
+  "cost_per_100_conversations_usd": 4.804056,
+  "cost_usd": 0.432365,
+  "created_at": "2026-11-17T15:51:22.782787+00:00",
+  "evaluated_case_runs": 9,
+  "git_commit": "202e1f6febf93a4ba9f9f4888f34f5a7e68e2f9c",
+  "input_tokens": 63703,
+  "median_latency_seconds": 14.7715,
+  "model": "claude-opus-4-6",
+  "output_tokens": 4554,
+  "price_date": "2026-11-16",
+  "prompt_sha256_12": "368e646318dc",
+  "schema_version": 1,
+  "score": 0.4,
+  "split": "test",
+  "test_plan_sha256": "978131888d8608327d300a2fd6a28aa385ee9d36992a5a334b9dfa4e84cdbb8d",
+  "write_pass_5": 0
+}
