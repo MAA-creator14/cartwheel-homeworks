@@ -260,8 +260,9 @@ def issue_refund_logic(
                 "reason": (
                     f"order #{order_id} is not refund-eligible "
                     f"(status '{order.status}', delivered {order.delivered_at}); "
-                    f"the return window counts from the delivery date"
+                    f"the return window counts from the delivery date (policy cw-returns)"
                 ),
+                "policy_id": "cw-returns",
             }
         today = db.world_asof(conn).isoformat()
         threshold = facts["refund_auto_approve_threshold_usd"]
@@ -282,8 +283,9 @@ def issue_refund_logic(
                 "amount_usd": amount_usd,
                 "note": (
                     f"amount is above the ${threshold} auto-approval threshold; "
-                    f"a human support agent will review it"
+                    f"a human support agent will review it (policy cw-refunds)"
                 ),
+                "policy_id": "cw-refunds",
             }
         refund_id = db.insert_refund(
             conn,
@@ -303,8 +305,9 @@ def issue_refund_logic(
             "note": (
                 f"refund goes back to the original payment method in "
                 f"{facts['refund_processing_days_min']} to "
-                f"{facts['refund_processing_days_max']} business days"
+                f"{facts['refund_processing_days_max']} business days (policy cw-refunds)"
             ),
+            "policy_id": "cw-refunds",
         }
 
 
@@ -327,6 +330,7 @@ def escalate_to_human_logic(
             "ok": True,
             "ticket_id": ticket_id,
             "sla_hours": facts["support_escalation_sla_hours"],
+            "policy_id": "cw-escalations",
         }
 
 
